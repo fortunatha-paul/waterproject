@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './register.css';
 
 export default function Register() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -58,7 +60,7 @@ export default function Register() {
           setErrors({ general: data.message || 'Registration failed' });
         }
       } else {
-        setSuccessMessage('Registration successful! You can now log in.');
+        setSuccessMessage('Registration successful! Redirecting to login...');
         setFormData({
           name: '',
           email: '',
@@ -70,10 +72,7 @@ export default function Register() {
           password: '',
           password_confirmation: '',
         });
-        // Redirect to login after 2 seconds
-        setTimeout(() => {
-          // window.location.href = '/login';
-        }, 2000);
+        navigate('/login');
       }
     } catch (error) {
       setErrors({ general: 'Network error. Please try again.' });
