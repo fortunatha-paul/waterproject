@@ -5,9 +5,8 @@ import UserDashboard from '../pages/Dashboard/User/Userdashboard';
 import { AuthProvider } from '../contexts/AuthContext';
 
 // Dashboard imports (update these paths based on your actual dashboard structure)
-// import AdminDashboard from '../pages/dashboard/admin';
-// import CustomerDashboard from '../pages/dashboard/customer';
-// import InspectorDashboard from '../pages/dashboard/inspector';
+import CustomerDashboard from '../pages/Dashboard/Custome Service/Customerservicedashboard';
+import InspectorDashboard from '../pages/Dashboard/inspector/Inspectordashboard';
 
 const AuthLayout = () => (
   <AuthProvider>
@@ -35,19 +34,14 @@ export const router = createBrowserRouter([
         path: '/dashboard/user',
         element: <UserDashboard />,
       },
-      // Add your dashboard routes here
-      // {
-      //   path: '/dashboard/admin',
-      //   element: <AdminDashboard />,
-      // },
-      // {
-      //   path: '/dashboard/customer',
-      //   element: <CustomerDashboard />,
-      // },
-      // {
-      //   path: '/dashboard/inspector',
-      //   element: <InspectorDashboard />,
-      // },
+      {
+        path: '/dashboard/customer',
+        element: <CustomerDashboard />,
+      },
+      {
+        path: '/dashboard/inspector',
+        element: <InspectorDashboard />,
+      },
     ],
   },
 ]);
