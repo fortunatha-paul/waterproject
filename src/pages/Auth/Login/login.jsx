@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
 import '../../../index.css';
 
 export default function Login() {
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -33,32 +35,12 @@ export default function Login() {
     setSuccessMessage('');
 
     try {
-      const response = await fetch('http://localhost:8000/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const result = await login(formData);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.errors) {
-          setErrors(data.errors);
-        } else {
-          setErrors({ general: data.message || 'Login failed' });
-        }
+      if (!result.success) {
+        setErrors({ general: result.error });
       } else {
         setSuccessMessage('Login successful! Redirecting...');
-        // Store token if provided
-        if (data.token) {
-          localStorage.setItem('auth_token', data.token);
-        }
-        setTimeout(() => {
-          // window.location.href = '/dashboard';
-        }, 1500);
       }
     } catch (error) {
       setErrors({ general: 'Network error. Please try again.' });
