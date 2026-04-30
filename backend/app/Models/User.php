@@ -28,6 +28,7 @@ class User extends Authenticatable
         'house_number',
         'district',
         'ward',
+        'role',
     ];
 
     /**
@@ -51,5 +52,37 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Check if user is a customer
+     */
+    public function isCustomer(): bool
+    {
+        return $this->role === 'customer';
+    }
+
+    /**
+     * Check if user is customer service
+     */
+    public function isCustomerService(): bool
+    {
+        return $this->role === 'customer_service';
+    }
+
+    /**
+     * Check if user is inspector
+     */
+    public function isInspector(): bool
+    {
+        return $this->role === 'inspector';
+    }
+
+    /**
+     * Check if user has admin role (only inspector)
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'inspector';
     }
 }

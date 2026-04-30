@@ -32,6 +32,7 @@ class RegistrationController extends Controller
             'district' => $validated['district'],
             'ward' => $validated['ward'],
             'password' => Hash::make($validated['password']),
+            'role' => 'customer', // Default role for all registered users
         ]);
 
         return response()->json([
