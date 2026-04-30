@@ -3,6 +3,7 @@ import Login from '../pages/Auth/Login/login';
 import Register from '../pages/Auth/Register/register';
 import UserDashboard from '../pages/Dashboard/User/Userdashboard';
 import { AuthProvider } from '../contexts/AuthContext';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 // Dashboard imports (update these paths based on your actual dashboard structure)
 import CustomerDashboard from '../pages/Dashboard/Custome Service/Customerservicedashboard';
@@ -32,15 +33,35 @@ export const router = createBrowserRouter([
       },
       {
         path: '/dashboard/user',
-        element: <UserDashboard />,
+        element: (
+          <ProtectedRoute requiredRole="user">
+            <UserDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/dashboard/customer-service',
+        element: (
+          <ProtectedRoute requiredRole="customer_service">
+            <CustomerDashboard />
+          </ProtectedRoute>
+        ),
       },
       {
         path: '/dashboard/customer',
-        element: <CustomerDashboard />,
+        element: (
+          <ProtectedRoute requiredRole="customer_service">
+            <CustomerDashboard />
+          </ProtectedRoute>
+        ),
       },
       {
         path: '/dashboard/inspector',
-        element: <InspectorDashboard />,
+        element: (
+          <ProtectedRoute requiredRole="inspector">
+            <InspectorDashboard />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
