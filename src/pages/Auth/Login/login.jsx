@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import './login.css';
+import '../../../index.css';
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -10,6 +10,7 @@ export default function Login() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -70,8 +71,11 @@ export default function Login() {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>Login</h1>
-        
+        <div className="login-icon">
+          <img src="/9746781.png" alt="Login Icon" style={{ width: '80px', height: '80px', marginBottom: '20px' }} />
+        </div>
+        <h1 style={{ color: 'black' }}>Welcome Back</h1>
+
         {successMessage && (
           <div className="success-message">{successMessage}</div>
         )}
@@ -82,7 +86,6 @@ export default function Login() {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email Address *</label>
             <input
               type="email"
               id="email"
@@ -90,36 +93,48 @@ export default function Login() {
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
+              style={{ color: 'black' }}
               required
             />
             {errors.email && <span className="error-text">{errors.email}</span>}
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password *</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              required
-            />
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                style={{ color: 'black' }}
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
             {errors.password && <span className="error-text">{errors.password}</span>}
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="submit-btn"
             disabled={loading}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
+
+
         <div className="register-link">
-          <p>Don't have an account? <a href="/register">Register here</a></p>
+          <p>Don't have an account? <a href="/register">Sign up</a></p>
         </div>
       </div>
     </div>
