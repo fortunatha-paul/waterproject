@@ -91,16 +91,6 @@ export default function NewRequestForm({ onClose, onSubmit }) {
             {errors.description && <span style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>{errors.description}</span>}
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-              Upload Image (optional)
-            </label>
-            <input type="file" name="image" accept="image/*" onChange={handleChange} style={{
-              width: '100%', padding: '8px 0', fontSize: 14,
-            }} />
-            {form.image && <span style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>Selected: {form.image.name}</span>}
-          </div>
-
           <div style={{ marginBottom: 24 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
               Location *
