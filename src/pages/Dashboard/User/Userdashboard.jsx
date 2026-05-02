@@ -1,47 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import SummaryCard from './components/SummaryCard';
 import StatusBadge from './components/StatusBadge';
 import NewRequestForm from './components/NewRequestForm';
 import RequestDetails from './components/RequestDetails';
+import axios from 'axios';
 
-const MOCK_REQUESTS = [
-  { id: 'REQ-001', serviceType: 'New Connection', date: '2026-04-28', status: 'Pending', description: 'Need a new water connection for residential unit B-12.', location: 'Block B, Sector 14', technician: null, expectedCompletion: null, stage: 0 },
-  { id: 'REQ-002', serviceType: 'Repair', date: '2026-04-25', status: 'In Progress', description: 'Leaking pipe near the kitchen area causing water wastage.', location: 'House 45, Lane 7', technician: 'Rajesh Kumar', expectedCompletion: '2026-05-03', stage: 3 },
-  { id: 'REQ-003', serviceType: 'Complaint', date: '2026-04-20', status: 'Completed', description: 'Low water pressure during morning hours.', location: 'Flat 302, Tower A', technician: 'Sunil Mehta', expectedCompletion: '2026-04-27', stage: 4 },
-  { id: 'REQ-004', serviceType: 'New Connection', date: '2026-04-18', status: 'Rejected', description: 'Request for commercial connection in residential zone.', location: 'Shop 12, Market Road', technician: null, expectedCompletion: null, stage: 1 },
-  { id: 'REQ-005', serviceType: 'Repair', date: '2026-04-15', status: 'Completed', description: 'Broken water meter needs replacement.', location: 'House 78, Sector 22', technician: 'Anil Sharma', expectedCompletion: '2026-04-22', stage: 4 },
-  { id: 'REQ-006', serviceType: 'Complaint', date: '2026-04-12', status: 'In Progress', description: 'Dirty water supply for the past 3 days.', location: 'Block C, Sector 9', technician: 'Vikram Singh', expectedCompletion: '2026-05-01', stage: 3 },
-];
+const API_URL = 'http://localhost:8000/api';
+
+// Configure axios with auth token
+const configureAxios = () => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  }
+};
 
 export default function UserDashboard() {
   const { user, logout } = useAuth();
-  const [requests, setRequests] = useState(MOCK_REQUESTS);
+  const [requests, setRequests] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Fetch requests from API
+  const fetchRequests = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/requests`);
+      // Transform API response to match frontend format
+      const transformedRequests = response.data.map(req => ({
+        id: `REQ-${String(req.id).padStart(3, '0')}`,
+        serviceType: req.serve_type,
+        date: new Date(req.created_at).toISOString().split('T')[0],
+        status: 'Pending', // Default status, can be updated later
+        description: req.description,
+        location: req.location,
+        technician: null,
+        expectedCompletion: null,
+        stage: 0,
+      }));
+      setRequests(transformedRequests);
+    } catch (error) {
+      console.error('Error fetching requests:', error);
+      // Set empty array if API fails - no fallback to mock data
+      setRequests([]);
+    }
+  };
+
+  // Load requests on component mount
+  useEffect(() => {
+    configureAxios();
+    fetchRequests();
+  }, []);
 
   const total = requests.length;
   const pending = requests.filter((r) => r.status === 'Pending').length;
   const inProgress = requests.filter((r) => r.status === 'In Progress').length;
   const completed = requests.filter((r) => r.status === 'Completed').length;
 
-  const handleNewRequest = (form) => {
-    const newReq = {
-      id: `REQ-${String(requests.length + 1).padStart(3, '0')}`,
-      serviceType: form.serviceType,
-      date: new Date().toISOString().split('T')[0],
-      status: 'Pending',
-      description: form.description,
-      location: form.location,
-      technician: null,
-      expectedCompletion: null,
-      stage: 0,
-    };
-    setRequests((prev) => [newReq, ...prev]);
-    setShowForm(false);
-    setSuccessMsg('Request submitted successfully!');
-    setTimeout(() => setSuccessMsg(''), 3000);
+  const handleNewRequest = async (form) => {
+    setLoading(true);
+    try {
+      // Save to database via API
+      await axios.post(`${API_URL}/requests`, {
+        serve_type: form.serviceType,
+        description: form.description,
+        location: form.location,
+      });
+
+      // Refresh data from database to ensure consistency
+      await fetchRequests();
+      setShowForm(false);
+      setSuccessMsg('Request submitted successfully and saved to database!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (error) {
+      console.error('Error creating request:', error);
+      setSuccessMsg('Error: Failed to save request. Please try again.');
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (selectedRequest) {
