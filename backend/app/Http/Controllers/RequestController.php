@@ -13,7 +13,15 @@ class RequestController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $requests = RequestModel::where('user_id', $user->id)->get();
+        
+        // If user is inspector, show all requests
+        if ($user->isInspector()) {
+            $requests = RequestModel::with('user')->get();
+        } else {
+            // For customers, show only their own requests
+            $requests = RequestModel::where('user_id', $user->id)->get();
+        }
+        
         return response()->json($requests);
     }
 

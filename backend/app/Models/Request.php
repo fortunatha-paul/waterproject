@@ -12,4 +12,12 @@ class Request extends Model
         'description',
         'location',
     ];
+
+    /**
+     * Get the user that owns the request.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
