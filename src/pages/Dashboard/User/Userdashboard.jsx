@@ -33,12 +33,15 @@ export default function UserDashboard() {
         id: `REQ-${String(req.id).padStart(3, '0')}`,
         serviceType: req.serve_type,
         date: new Date(req.created_at).toISOString().split('T')[0],
-        status: 'Pending', // Default status, can be updated later
+        status: req.status || 'Pending',
         description: req.description,
         location: req.location,
-        technician: null,
-        expectedCompletion: null,
-        stage: 0,
+        technician: req.assigned_staff,
+        expectedCompletion: req.deadline,
+        stage: req.status === 'Completed' ? 3 : req.status === 'In Progress' ? 2 : req.status === 'Pending' ? 1 : 0,
+        priority: req.priority || 'Medium',
+        comments: Array.isArray(req.comments) ? req.comments : [],
+        timeline: Array.isArray(req.timeline) ? req.timeline : [],
       }));
       setRequests(transformedRequests);
     } catch (error) {
@@ -48,10 +51,15 @@ export default function UserDashboard() {
     }
   };
 
-  // Load requests on component mount
+  // Load requests on component mount and set up periodic refresh
   useEffect(() => {
     configureAxios();
     fetchRequests();
+
+    // Set up periodic refresh to get real-time updates
+    const interval = setInterval(fetchRequests, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const total = requests.length;

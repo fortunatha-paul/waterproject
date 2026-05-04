@@ -31,14 +31,14 @@ const CustomerServiceDashboard = () => {
                 serviceType: request.serve_type || 'General',
                 date: new Date(request.created_at).toISOString().split('T')[0],
                 status: request.status || 'Pending',
-                priority: 'Medium',
+                priority: request.priority || 'Medium',
                 description: request.description,
                 location: request.location,
-                assignedStaff: null,
-                deadline: null,
+                assignedStaff: request.assigned_staff,
+                deadline: request.deadline,
                 images: [],
-                comments: [],
-                timeline: [{
+                comments: Array.isArray(request.comments) ? request.comments : [],
+                timeline: Array.isArray(request.timeline) ? request.timeline : [{
                     date: new Date(request.created_at).toISOString().split('T')[0],
                     event: 'Request Submitted',
                     by: request.user?.name || 'Customer'
@@ -76,11 +76,15 @@ const CustomerServiceDashboard = () => {
         setAssignModalRequest(fresh);
     };
 
-    const handleSaveAssignment = (updatedReq) => {
+    const handleSaveAssignment = async (updatedReq) => {
+        // Update local state immediately for responsive UI
         setRequests((prev) => prev.map((r) => (r.id === updatedReq.id ? updatedReq : r)));
         if (selectedRequest && selectedRequest.id === updatedReq.id) {
             setSelectedRequest(updatedReq);
         }
+
+        // Refresh data from server to ensure consistency
+        await fetchRequests();
     };
 
     const handleStatusChange = (req) => {

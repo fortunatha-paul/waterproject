@@ -68,7 +68,14 @@ class RequestController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        $requestModel = RequestModel::where('id', $id)->where('user_id', $user->id)->first();
+        
+        // Find request - customer service can update any request, others only their own
+        if ($user->isCustomerService()) {
+            $requestModel = RequestModel::where('id', $id)->first();
+        } else {
+            $requestModel = RequestModel::where('id', $id)->where('user_id', $user->id)->first();
+        }
+        
         if (!$requestModel) {
             return response()->json(['message' => 'Request not found'], 404);
         }
@@ -77,6 +84,12 @@ class RequestController extends Controller
             'serve_type' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'location' => 'sometimes|string|max:255',
+            'status' => 'sometimes|string|in:Pending,In Progress,Completed,Rejected,Resolved',
+            'priority' => 'sometimes|string|in:Low,Medium,High,Urgent',
+            'assigned_staff' => 'sometimes|nullable|string|max:255',
+            'deadline' => 'sometimes|nullable|date',
+            'comments' => 'sometimes|nullable|array',
+            'timeline' => 'sometimes|nullable|array',
         ]);
 
         $requestModel->update($validated);

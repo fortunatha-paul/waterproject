@@ -80,6 +80,7 @@ export default function RequestsTable({ requests, onView, onAssign, onUpdate }) 
             style={{
               padding: '8px 12px', borderRadius: 8, border: '1px solid #d1d5db',
               fontSize: 13, background: '#fff', cursor: 'pointer', minWidth: 130,
+              color: '#374151', appearance: 'auto', boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
             }}
           >
             {f.options.map((o) => <option key={o} value={o}>{o === 'All' ? `${f.label}: All` : o}</option>)}

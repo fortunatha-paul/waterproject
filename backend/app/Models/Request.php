@@ -11,6 +11,12 @@ class Request extends Model
         'serve_type',
         'description',
         'location',
+        'status',
+        'priority',
+        'assigned_staff',
+        'deadline',
+        'comments',
+        'timeline',
     ];
 
     /**

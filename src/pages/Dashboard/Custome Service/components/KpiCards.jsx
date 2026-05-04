@@ -47,7 +47,7 @@ export default function KpiCards({ stats }) {
             <div style={{ fontSize: 13, color: '#6b7280', fontWeight: 500, marginBottom: 2 }}>
               {c.label}
             </div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: c.color }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#000000' }}>
               {stats[c.key] ?? 0}
             </div>
           </div>

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import StatusBadge from './StatusBadge';
+import AssignTaskModal from './AssignTaskModal';
 
 export default function RequestDetails({ request, onBack, onAssign, onStatusChange }) {
   const [newComment, setNewComment] = useState('');
+  const [showAssignModal, setShowAssignModal] = useState(false);
 
   if (!request) return null;
 
-  const timeline = request.timeline || [
+  const timeline = Array.isArray(request.timeline) ? request.timeline : [
     { date: request.date, event: 'Request Submitted', by: request.customerName },
     ...(request.assignedStaff ? [{ date: request.date, event: 'Assigned to ' + request.assignedStaff, by: 'System' }] : []),
     ...(request.status === 'Completed' ? [{ date: request.completedDate || '—', event: 'Request Completed', by: request.assignedStaff || 'System' }] : []),
@@ -18,6 +20,16 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
       onAssign({ ...request, comments: [...(request.comments || []), { text: newComment, by: 'Staff', date: new Date().toISOString().split('T')[0] }] });
     }
     setNewComment('');
+  };
+
+  const handleAssignClick = () => {
+    setShowAssignModal(true);
+  };
+
+  const handleAssignSave = (updatedRequest) => {
+    if (onAssign) {
+      onAssign(updatedRequest);
+    }
   };
 
   return (
@@ -49,7 +61,7 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => onAssign && onAssign(request)} style={{
+            <button onClick={handleAssignClick} style={{
               padding: '8px 18px', borderRadius: 8, border: 'none',
               background: '#8B5CF6', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
             }}>
@@ -191,6 +203,15 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
           </div>
         </div>
       </div>
+
+      {/* Assign Task Modal */}
+      {showAssignModal && (
+        <AssignTaskModal
+          request={request}
+          onClose={() => setShowAssignModal(false)}
+          onSave={handleAssignSave}
+        />
+      )}
     </div>
   );
 }
