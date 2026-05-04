@@ -274,7 +274,6 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [serviceRequests, setServiceRequests] = useState(MOCK_INSPECTIONS);
   const [reports, setReports] = useState(MOCK_REPORTS);
-  const [customerRequests, setCustomerRequests] = useState([]);
   const [selectedServiceRequest, setSelectedServiceRequest] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -284,42 +283,10 @@ export default function AdminDashboard() {
   const scheduled = serviceRequests.filter(i => i.status === 'Scheduled').length;
   const inProgress = serviceRequests.filter(i => i.status === 'In Progress').length;
   const completed = serviceRequests.filter(i => i.status === 'Completed').length;
-  const pendingRequests = customerRequests.filter(r => r.status === 'Pending').length;
 
-  // Debug logging
-  console.log('Debug - scheduled:', scheduled, 'inProgress:', inProgress);
-
-  // Fetch customer requests from API
-  const fetchCustomerRequests = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${API_URL}/requests`);
-      // Transform API response to match frontend format
-      const transformedRequests = response.data.map(req => ({
-        id: `REQ-${String(req.id).padStart(3, '0')}`,
-        serviceType: req.serve_type,
-        description: req.description,
-        location: req.location,
-        status: 'Pending', // Default status for new requests
-        priority: 'Medium', // Default priority
-        date: new Date().toISOString().split('T')[0], // Current date
-        customerName: req.user?.name || 'Unknown Customer',
-        customerEmail: req.user?.email || 'Unknown Email',
-        customerPhone: req.user?.phone_number || 'N/A',
-        originalId: req.id
-      }));
-      setCustomerRequests(transformedRequests);
-    } catch (error) {
-      console.error('Error fetching customer requests:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load customer requests on component mount
+  // Load on component mount
   useEffect(() => {
     configureAxios();
-    fetchCustomerRequests();
   }, []);
 
   const handleUpdateServiceRequest = (id, status, notes) => {
@@ -497,8 +464,6 @@ export default function AdminDashboard() {
           <SummaryCard icon="" label="Scheduled" value={scheduled} color="#F59E0B" />
           <SummaryCard icon="" label="In Progress" value={inProgress} color="#3B82F6" />
           <SummaryCard icon="" label="Completed" value={completed} color="#10B981" />
-          <SummaryCard icon="" label="Customer Requests" value={customerRequests.length} color="#8B5CF6" />
-          <SummaryCard icon="" label="Pending Requests" value={pendingRequests} color="#EF4444" />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
@@ -595,7 +560,8 @@ export default function AdminDashboard() {
                   transition: 'all 0.2s',
                 }}
                   onMouseEnter={(e) => e.currentTarget.style.background = '#F3F4F6'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = '#FAFAFA'}>
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#FAFAFA'}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#1f2937' }}>
                       {report.title}
@@ -612,98 +578,6 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Customer Requests Section */}
-        <div style={{
-          background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.08)', overflow: 'hidden', marginTop: 24,
-        }}>
-          <div style={{
-            padding: '20px 24px', borderBottom: '1px solid #f0f0f0',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          }}>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1f2937', margin: 0 }}>
-              Customer Requests
-            </h2>
-            <span style={{ fontSize: 13, color: '#9CA3AF' }}>
-              {customerRequests.length} request{customerRequests.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-
-          {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-              Loading customer requests...
-            </div>
-          ) : customerRequests.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-              No customer requests found
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
-                <thead>
-                  <tr style={{ background: '#F9FAFB' }}>
-                    {['Request ID', 'Customer', 'Service Type', 'Location', 'Description', 'Status', 'Priority', 'Action'].map((h) => (
-                      <th key={h} style={{
-                        padding: '12px 16px', textAlign: 'left', fontSize: 12,
-                        fontWeight: 600, color: '#6b7280', textTransform: 'uppercase',
-                        letterSpacing: '0.5px', borderBottom: '1px solid #E5E7EB',
-                      }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {customerRequests.map((request) => (
-                    <tr key={request.id} style={{ borderBottom: '1px solid #f0f0f0', transition: 'background 0.15s' }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600, color: '#1f2937' }}>
-                        {request.id}
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ fontSize: 14, color: '#374151', fontWeight: 600 }}>{request.customerName}</div>
-                        <div style={{ fontSize: 12, color: '#6b7280' }}>{request.customerPhone}</div>
-                      </td>
-                      <td style={{ padding: '14px 16px', fontSize: 14, color: '#374151' }}>
-                        {request.serviceType}
-                      </td>
-                      <td style={{ padding: '14px 16px', fontSize: 14, color: '#6b7280' }}>
-                        {request.location}
-                      </td>
-                      <td style={{ padding: '14px 16px', fontSize: 14, color: '#6b7280', maxWidth: 200 }}>
-                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {request.description}
-                        </div>
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <StatusBadge status={request.status} />
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <PriorityBadge priority={request.priority} />
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <button onClick={() => {
-                          // Handle request action - could open details modal or assign to inspection
-                          setSuccessMsg(`Processing request ${request.id}`);
-                          setTimeout(() => setSuccessMsg(''), 3000);
-                        }} style={{
-                          padding: '6px 14px', borderRadius: 6, border: '1px solid #8B5CF6',
-                          background: '#F3F4F6', color: '#8B5CF6', fontSize: 13, fontWeight: 600,
-                          cursor: 'pointer', transition: 'all 0.2s',
-                        }}>
-                          Process
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
       </div>
     </div>
