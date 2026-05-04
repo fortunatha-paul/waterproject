@@ -1,4 +1,15 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+
+const API_URL = 'http://localhost:8000/api';
+
+// Configure axios with auth token
+const configureAxios = () => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  }
+};
 
 const TECHNICIANS = [
   'Rajesh Kumar', 'Sunil Mehta', 'Anil Sharma', 'Vikram Singh',
@@ -15,24 +26,55 @@ export default function AssignTaskModal({ request, onClose, onSave }) {
   const [status, setStatus] = useState(request.status || 'Pending');
   const [note, setNote] = useState('');
 
-  const handleSave = () => {
-    const updated = {
-      ...request,
-      assignedStaff: assignedStaff || null,
-      priority,
-      deadline: deadline || null,
-      status,
-    };
-    if (note.trim()) {
-      updated.comments = [...(request.comments || []), { text: note, by: 'Staff', date: new Date().toISOString().split('T')[0] }];
+  const handleSave = async () => {
+    try {
+      configureAxios();
+
+      // Extract the numeric ID from REQ-XXX format
+      const requestId = request.id.includes('REQ-')
+        ? request.id.replace('REQ-', '')
+        : request.id;
+
+      const updated = {
+        assigned_staff: assignedStaff || null,
+        priority,
+        deadline: deadline || null,
+        status,
+      };
+
+      if (note.trim()) {
+        updated.comments = [
+          ...(request.comments || []),
+          { text: note, by: 'Staff', date: new Date().toISOString().split('T')[0] }
+        ];
+      }
+
+      updated.timeline = [
+        ...(request.timeline || []),
+        { date: new Date().toISOString().split('T')[0], event: `Status changed to ${status}`, by: 'Staff' },
+        ...(assignedStaff && assignedStaff !== request.assignedStaff ? [{ date: new Date().toISOString().split('T')[0], event: `Assigned to ${assignedStaff}`, by: 'Staff' }] : []),
+      ];
+
+      // Call API to update the request in database
+      await axios.put(`${API_URL}/requests/${requestId}`, updated);
+
+      // Transform the response to match frontend format
+      const frontendUpdated = {
+        ...request,
+        assignedStaff: assignedStaff || null,
+        priority,
+        deadline: deadline || null,
+        status,
+        comments: updated.comments,
+        timeline: updated.timeline,
+      };
+
+      onSave(frontendUpdated);
+      onClose();
+    } catch (error) {
+      console.error('Error updating request:', error);
+      alert('Failed to update request. Please try again.');
     }
-    updated.timeline = [
-      ...(request.timeline || []),
-      { date: new Date().toISOString().split('T')[0], event: `Status changed to ${status}`, by: 'Staff' },
-      ...(assignedStaff && assignedStaff !== request.assignedStaff ? [{ date: new Date().toISOString().split('T')[0], event: `Assigned to ${assignedStaff}`, by: 'Staff' }] : []),
-    ];
-    onSave(updated);
-    onClose();
   };
 
   return (

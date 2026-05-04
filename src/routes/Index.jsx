@@ -7,7 +7,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 
 // Dashboard imports (update these paths based on your actual dashboard structure)
 import CustomerDashboard from '../pages/Dashboard/Custome Service/Customerservicedashboard';
-import InspectorDashboard from '../pages/Dashboard/inspector/Inspectordashboard';
+import InspectorDashboard from '../pages/Dashboard/inspector/InspectorDashboard';
 
 const AuthLayout = () => (
   <AuthProvider>

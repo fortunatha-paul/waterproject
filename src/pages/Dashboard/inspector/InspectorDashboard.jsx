@@ -168,7 +168,7 @@ function PriorityBadge({ priority }) {
   );
 }
 
-function InspectionDetails({ inspection, onBack, onUpdateStatus }) {
+function ServiceRequestDetails({ inspection, onBack, onUpdateStatus }) {
   const [notes, setNotes] = useState(inspection.notes || '');
   const [status, setStatus] = useState(inspection.status);
 
@@ -181,7 +181,7 @@ function InspectionDetails({ inspection, onBack, onUpdateStatus }) {
     <div style={{ background: '#fff', borderRadius: 12, padding: '32px', border: '1px solid #e5e7eb' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1f2937', margin: 0 }}>
-          Inspection Details - {inspection.id}
+          Service Request Details - {inspection.id}
         </h2>
         <button onClick={onBack} style={{
           padding: '8px 16px', borderRadius: 8, border: '1px solid #d1d5db',
@@ -237,11 +237,11 @@ function InspectionDetails({ inspection, onBack, onUpdateStatus }) {
       </div>
 
       <div style={{ marginBottom: 24 }}>
-        <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inspection Notes</label>
+        <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Service Notes</label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Enter inspection notes..."
+          placeholder="Enter service notes..."
           style={{
             width: '100%', padding: '12px', borderRadius: 8, border: '1px solid #d1d5db',
             fontSize: 14, marginTop: 8, minHeight: 120, resize: 'vertical',
@@ -263,81 +263,48 @@ function InspectionDetails({ inspection, onBack, onUpdateStatus }) {
           background: '#3B82F6', color: '#fff', fontSize: 14, fontWeight: 600,
           cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(59,130,246,0.3)',
         }}>
-          Update Inspection
+          Update Request
         </button>
       </div>
     </div>
   );
 }
 
-export default function InspectorDashboard() {
+export default function AdminDashboard() {
   const { user, logout } = useAuth();
-  const [inspections, setInspections] = useState(MOCK_INSPECTIONS);
+  const [serviceRequests, setServiceRequests] = useState(MOCK_INSPECTIONS);
   const [reports, setReports] = useState(MOCK_REPORTS);
-  const [customerRequests, setCustomerRequests] = useState([]);
-  const [selectedInspection, setSelectedInspection] = useState(null);
+  const [selectedServiceRequest, setSelectedServiceRequest] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Calculate derived values
-  const total = inspections.length;
-  const scheduled = inspections.filter(i => i.status === 'Scheduled').length;
-  const inProgress = inspections.filter(i => i.status === 'In Progress').length;
-  const completed = inspections.filter(i => i.status === 'Completed').length;
-  const pendingRequests = customerRequests.filter(r => r.status === 'Pending').length;
+  const total = serviceRequests.length;
+  const scheduled = serviceRequests.filter(i => i.status === 'Scheduled').length;
+  const inProgress = serviceRequests.filter(i => i.status === 'In Progress').length;
+  const completed = serviceRequests.filter(i => i.status === 'Completed').length;
 
-  // Debug logging
-  console.log('Debug - scheduled:', scheduled, 'inProgress:', inProgress);
-
-  // Fetch customer requests from API
-  const fetchCustomerRequests = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${API_URL}/requests`);
-      // Transform API response to match frontend format
-      const transformedRequests = response.data.map(req => ({
-        id: `REQ-${String(req.id).padStart(3, '0')}`,
-        serviceType: req.serve_type,
-        description: req.description,
-        location: req.location,
-        status: 'Pending', // Default status for new requests
-        priority: 'Medium', // Default priority
-        date: new Date().toISOString().split('T')[0], // Current date
-        customerName: req.user?.name || 'Unknown Customer',
-        customerEmail: req.user?.email || 'Unknown Email',
-        customerPhone: req.user?.phone_number || 'N/A',
-        originalId: req.id
-      }));
-      setCustomerRequests(transformedRequests);
-    } catch (error) {
-      console.error('Error fetching customer requests:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load customer requests on component mount
+  // Load on component mount
   useEffect(() => {
     configureAxios();
-    fetchCustomerRequests();
   }, []);
 
-  const handleUpdateInspection = (id, status, notes) => {
-    setInspections(prev => prev.map(insp =>
-      insp.id === id ? { ...insp, status, notes } : insp
+  const handleUpdateServiceRequest = (id, status, notes) => {
+    setServiceRequests(prev => prev.map(req =>
+      req.id === id ? { ...req, status, notes } : req
     ));
-    setSuccessMsg('Inspection updated successfully!');
+    setSuccessMsg('Service request updated successfully!');
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
-  if (selectedInspection) {
+  if (selectedServiceRequest) {
     return (
       <div style={{ minHeight: '100vh', background: '#F9FAFB', padding: '24px 32px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <InspectionDetails
-            inspection={selectedInspection}
-            onBack={() => setSelectedInspection(null)}
-            onUpdateStatus={handleUpdateInspection}
+          <ServiceRequestDetails
+            inspection={selectedServiceRequest}
+            onBack={() => setSelectedServiceRequest(null)}
+            onUpdateStatus={handleUpdateServiceRequest}
           />
         </div>
       </div>
@@ -394,7 +361,7 @@ export default function InspectorDashboard() {
               marginBottom: 4,
               textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
             }}>
-              {user?.name || 'Inspector'}
+              {user?.name || 'Admin'}
             </div>
             <div style={{
               fontSize: 14,
@@ -402,7 +369,7 @@ export default function InspectorDashboard() {
               fontWeight: 600,
               letterSpacing: '0.025em',
             }}>
-              Water Inspection Portal
+              Water Administration Portal
             </div>
           </div>
         </div>
@@ -474,7 +441,7 @@ export default function InspectorDashboard() {
           flexWrap: 'wrap', gap: 16, marginBottom: 24,
         }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1f2937', margin: 0 }}>
-            Inspector Dashboard
+            Admin Dashboard
           </h1>
         </div>
 
@@ -493,12 +460,10 @@ export default function InspectorDashboard() {
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 32,
         }}>
-          <SummaryCard icon="" label="Total Inspections" value={total} color="#6366F1" trend={{ type: 'up', value: 12 }} />
+          <SummaryCard icon="" label="Total Requests" value={total} color="#6366F1" trend={{ type: 'up', value: 12 }} />
           <SummaryCard icon="" label="Scheduled" value={scheduled} color="#F59E0B" />
           <SummaryCard icon="" label="In Progress" value={inProgress} color="#3B82F6" />
           <SummaryCard icon="" label="Completed" value={completed} color="#10B981" />
-          <SummaryCard icon="" label="Customer Requests" value={customerRequests.length} color="#8B5CF6" />
-          <SummaryCard icon="" label="Pending Requests" value={pendingRequests} color="#EF4444" />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
@@ -512,10 +477,10 @@ export default function InspectorDashboard() {
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
               <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1f2937', margin: 0 }}>
-                Scheduled Inspections
+                Scheduled Services
               </h2>
               <span style={{ fontSize: 13, color: '#9CA3AF' }}>
-                {inspections.length} inspection{inspections.length !== 1 ? 's' : ''}
+                {serviceRequests.length} service request{serviceRequests.length !== 1 ? 's' : ''}
               </span>
             </div>
 
@@ -535,32 +500,32 @@ export default function InspectorDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {inspections.map((inspection) => (
-                    <tr key={inspection.id} style={{ borderBottom: '1px solid #f0f0f0', transition: 'background 0.15s' }}
+                  {serviceRequests.map((request) => (
+                    <tr key={request.id} style={{ borderBottom: '1px solid #f0f0f0', transition: 'background 0.15s' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
                       <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600, color: '#1f2937' }}>
-                        {inspection.id}
+                        {request.id}
                       </td>
                       <td style={{ padding: '14px 16px' }}>
-                        <div style={{ fontSize: 14, color: '#374151', fontWeight: 600 }}>{inspection.propertyId}</div>
-                        <div style={{ fontSize: 12, color: '#6b7280' }}>{inspection.propertyAddress}</div>
+                        <div style={{ fontSize: 14, color: '#374151', fontWeight: 600 }}>{request.propertyId}</div>
+                        <div style={{ fontSize: 12, color: '#6b7280' }}>{request.propertyAddress}</div>
                       </td>
                       <td style={{ padding: '14px 16px', fontSize: 14, color: '#374151' }}>
-                        {inspection.inspectionType}
+                        {request.inspectionType}
                       </td>
                       <td style={{ padding: '14px 16px', fontSize: 14, color: '#6b7280' }}>
-                        {inspection.date}
+                        {request.date}
                       </td>
                       <td style={{ padding: '14px 16px' }}>
-                        <PriorityBadge priority={inspection.priority} />
+                        <PriorityBadge priority={request.priority} />
                       </td>
                       <td style={{ padding: '14px 16px' }}>
-                        <StatusBadge status={inspection.status} />
+                        <StatusBadge status={request.status} />
                       </td>
                       <td style={{ padding: '14px 16px' }}>
-                        <button onClick={() => setSelectedInspection(inspection)} style={{
+                        <button onClick={() => setSelectedServiceRequest(request)} style={{
                           padding: '6px 14px', borderRadius: 6, border: '1px solid #3B82F6',
                           background: '#EFF6FF', color: '#3B82F6', fontSize: 13, fontWeight: 600,
                           cursor: 'pointer', transition: 'all 0.2s',
@@ -587,7 +552,6 @@ export default function InspectorDashboard() {
                 Recent Reports
               </h2>
             </div>
-
             <div style={{ padding: '16px' }}>
               {reports.map((report) => (
                 <div key={report.id} style={{
@@ -596,7 +560,8 @@ export default function InspectorDashboard() {
                   transition: 'all 0.2s',
                 }}
                   onMouseEnter={(e) => e.currentTarget.style.background = '#F3F4F6'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = '#FAFAFA'}>
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#FAFAFA'}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#1f2937' }}>
                       {report.title}
@@ -613,98 +578,6 @@ export default function InspectorDashboard() {
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Customer Requests Section */}
-        <div style={{
-          background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.08)', overflow: 'hidden', marginTop: 24,
-        }}>
-          <div style={{
-            padding: '20px 24px', borderBottom: '1px solid #f0f0f0',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          }}>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1f2937', margin: 0 }}>
-              Customer Requests
-            </h2>
-            <span style={{ fontSize: 13, color: '#9CA3AF' }}>
-              {customerRequests.length} request{customerRequests.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-
-          {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-              Loading customer requests...
-            </div>
-          ) : customerRequests.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-              No customer requests found
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 800 }}>
-                <thead>
-                  <tr style={{ background: '#F9FAFB' }}>
-                    {['Request ID', 'Customer', 'Service Type', 'Location', 'Description', 'Status', 'Priority', 'Action'].map((h) => (
-                      <th key={h} style={{
-                        padding: '12px 16px', textAlign: 'left', fontSize: 12,
-                        fontWeight: 600, color: '#6b7280', textTransform: 'uppercase',
-                        letterSpacing: '0.5px', borderBottom: '1px solid #E5E7EB',
-                      }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {customerRequests.map((request) => (
-                    <tr key={request.id} style={{ borderBottom: '1px solid #f0f0f0', transition: 'background 0.15s' }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600, color: '#1f2937' }}>
-                        {request.id}
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ fontSize: 14, color: '#374151', fontWeight: 600 }}>{request.customerName}</div>
-                        <div style={{ fontSize: 12, color: '#6b7280' }}>{request.customerPhone}</div>
-                      </td>
-                      <td style={{ padding: '14px 16px', fontSize: 14, color: '#374151' }}>
-                        {request.serviceType}
-                      </td>
-                      <td style={{ padding: '14px 16px', fontSize: 14, color: '#6b7280' }}>
-                        {request.location}
-                      </td>
-                      <td style={{ padding: '14px 16px', fontSize: 14, color: '#6b7280', maxWidth: 200 }}>
-                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {request.description}
-                        </div>
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <StatusBadge status={request.status} />
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <PriorityBadge priority={request.priority} />
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <button onClick={() => {
-                          // Handle request action - could open details modal or assign to inspection
-                          setSuccessMsg(`Processing request ${request.id}`);
-                          setTimeout(() => setSuccessMsg(''), 3000);
-                        }} style={{
-                          padding: '6px 14px', borderRadius: 6, border: '1px solid #8B5CF6',
-                          background: '#F3F4F6', color: '#8B5CF6', fontSize: 13, fontWeight: 600,
-                          cursor: 'pointer', transition: 'all 0.2s',
-                        }}>
-                          Process
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
       </div>
     </div>
