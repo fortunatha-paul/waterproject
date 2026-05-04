@@ -14,11 +14,11 @@ class RequestController extends Controller
     {
         $user = auth()->user();
         
-        // If user is inspector, show all requests
-        if ($user->isInspector()) {
+        // If user is customer service, show all requests
+        if ($user->isCustomerService()) {
             $requests = RequestModel::with('user')->get();
         } else {
-            // For customers, show only their own requests
+            // For customers and inspectors, show only their own requests
             $requests = RequestModel::where('user_id', $user->id)->get();
         }
         
@@ -47,7 +47,15 @@ class RequestController extends Controller
     public function show(string $id)
     {
         $user = auth()->user();
-        $request = RequestModel::where('id', $id)->where('user_id', $user->id)->first();
+        
+        // If user is customer service, show any request
+        if ($user->isCustomerService()) {
+            $request = RequestModel::with('user')->where('id', $id)->first();
+        } else {
+            // For customers and inspectors, show only their own requests
+            $request = RequestModel::where('id', $id)->where('user_id', $user->id)->first();
+        }
+        
         if (!$request) {
             return response()->json(['message' => 'Request not found'], 404);
         }

@@ -24,7 +24,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
       'user': '/dashboard/user',
       'customer': '/dashboard/user'
     };
-    
+
     const redirectPath = roleMap[user.role?.toLowerCase()] || '/dashboard/user';
     return <Navigate to={redirectPath} replace />;
   }
