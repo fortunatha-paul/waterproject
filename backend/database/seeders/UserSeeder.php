@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
 
         // Create inspector user
         User::create([
-            'name' => 'Inspector Admin',
+            'name' => 'Catherine Brown',
             'email' => 'inspector@waterproject.com',
             'password' => Hash::make('password'),
             'phone_number' => '+255987654321',

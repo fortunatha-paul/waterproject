@@ -11,7 +11,7 @@ const configureAxios = () => {
   }
 };
 
-const TECHNICIANS = [
+const INSPECTORS = [
   'Rajesh Kumar', 'Sunil Mehta', 'Anil Sharma', 'Vikram Singh',
   'Priya Patel', 'Amit Joshi', 'Neha Gupta', 'Suresh Rao',
 ];
@@ -25,6 +25,26 @@ export default function AssignTaskModal({ request, onClose, onSave }) {
   const [deadline, setDeadline] = useState(request.deadline || '');
   const [status, setStatus] = useState(request.status || 'Pending');
   const [note, setNote] = useState('');
+  const [inspectors, setInspectors] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch inspectors from database
+  React.useEffect(() => {
+    const fetchInspectors = async () => {
+      try {
+        configureAxios();
+        const response = await axios.get(`${API_URL}/users?role=inspector`);
+        setInspectors(response.data);
+      } catch (error) {
+        console.error('Error fetching inspectors:', error);
+        setInspectors([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInspectors();
+  }, []);
 
   const handleSave = async () => {
     try {
@@ -107,11 +127,15 @@ export default function AssignTaskModal({ request, onClose, onSave }) {
 
         {/* Body */}
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {/* Assign Technician */}
-          <FieldGroup label="Assign Technician">
-            <select value={assignedStaff} onChange={(e) => setAssignedStaff(e.target.value)} style={selectStyle}>
-              <option value="">— Select Technician —</option>
-              {TECHNICIANS.map((t) => <option key={t} value={t}>{t}</option>)}
+          {/* Assign Inspector */}
+          <FieldGroup label="Assign Inspector">
+            <select value={assignedStaff} onChange={(e) => setAssignedStaff(e.target.value)} style={selectStyle} disabled={loading}>
+              <option value="">{loading ? 'Loading...' : '— Select Inspector —'}</option>
+              {inspectors.map((inspector) => (
+                <option key={inspector.id} value={inspector.name}>
+                  {inspector.name}
+                </option>
+              ))}
             </select>
           </FieldGroup>
 
@@ -198,7 +222,7 @@ function FieldGroup({ label, children }) {
 const selectStyle = {
   width: '100%', padding: '10px 12px', borderRadius: 8,
   border: '1px solid #d1d5db', fontSize: 14, background: '#fff',
-  outline: 'none', boxSizing: 'border-box',
+  outline: 'none', boxSizing: 'border-box', color: '#000',
 };
 
 const priorityColors = {
