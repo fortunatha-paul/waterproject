@@ -96,7 +96,7 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
             </Section>
 
             {/* Uploaded Images */}
-            <Section title="Uploaded Images">
+            {/* <Section title="Uploaded Images">
               {request.images && request.images.length > 0 ? (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {request.images.map((img, i) => (
@@ -112,13 +112,13 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
               ) : (
                 <span style={{ fontSize: 13, color: '#9CA3AF' }}>No images uploaded</span>
               )}
-            </Section>
+            </Section> */}
           </div>
 
           {/* Right Column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Assigned Technician */}
-            <Section title="Assigned Technician">
+            {/* Assigned Inspector */}
+            <Section title="Assigned Inspector">
               {request.assignedStaff ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
@@ -130,11 +130,11 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
                   </div>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#1f2937' }}>{request.assignedStaff}</div>
-                    <div style={{ fontSize: 12, color: '#6b7280' }}>Technician</div>
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>Inspector</div>
                   </div>
                 </div>
               ) : (
-                <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 500 }}>No technician assigned yet</span>
+                <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 500 }}>No inspector assigned yet</span>
               )}
               {request.deadline && (
                 <InfoRow label="Deadline" value={request.deadline} />
@@ -164,7 +164,7 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
             </Section>
 
             {/* Notes / Comments */}
-            <Section title="Notes & Comments">
+            {/* <Section title="Notes & Comments">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
                 {(request.comments || []).length === 0 ? (
                   <span style={{ fontSize: 13, color: '#9CA3AF' }}>No comments yet</span>
@@ -199,7 +199,7 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
                   Send
                 </button>
               </div>
-            </Section>
+            </Section> */}
           </div>
         </div>
       </div>

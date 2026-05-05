@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\RequestController;
+use App\Http\Controllers\UserController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -14,3 +15,5 @@ Route::post('/register', [RegistrationController::class, 'register']);
 Route::post('/login', [LoginController::class, 'login']);
 
 Route::apiResource('requests', RequestController::class)->middleware('auth:sanctum');
+
+Route::get('/users', [UserController::class, 'index'])->middleware('auth:sanctum');
