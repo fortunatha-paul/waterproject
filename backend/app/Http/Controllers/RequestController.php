@@ -17,8 +17,13 @@ class RequestController extends Controller
         // If user is customer service, show all requests
         if ($user->isCustomerService()) {
             $requests = RequestModel::with('user')->get();
+        } elseif ($user->isInspector()) {
+            // For inspectors, show requests assigned to them
+            $requests = RequestModel::with('user')
+                ->where('assigned_staff', $user->name)
+                ->get();
         } else {
-            // For customers and inspectors, show only their own requests
+            // For customers, show only their own requests
             $requests = RequestModel::where('user_id', $user->id)->get();
         }
         
@@ -51,8 +56,14 @@ class RequestController extends Controller
         // If user is customer service, show any request
         if ($user->isCustomerService()) {
             $request = RequestModel::with('user')->where('id', $id)->first();
+        } elseif ($user->isInspector()) {
+            // For inspectors, show requests assigned to them
+            $request = RequestModel::with('user')
+                ->where('id', $id)
+                ->where('assigned_staff', $user->name)
+                ->first();
         } else {
-            // For customers and inspectors, show only their own requests
+            // For customers, show only their own requests
             $request = RequestModel::where('id', $id)->where('user_id', $user->id)->first();
         }
         
