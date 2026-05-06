@@ -5,6 +5,7 @@ import KpiCards from './components/KpiCards';
 import RequestsTable from './components/RequestsTable';
 import RequestDetails from './components/RequestDetails';
 import AssignTaskModal from './components/AssignTaskModal';
+import DashboardStateManager from '../../../utils/dashboardState';
 
 const CustomerServiceDashboard = () => {
     const { user, logout } = useAuth();
@@ -13,9 +14,22 @@ const CustomerServiceDashboard = () => {
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [assignModalRequest, setAssignModalRequest] = useState(null);
 
+    // Initialize dashboard state manager
+    const [stateManager] = useState(() => new DashboardStateManager('customer-service'));
+
     useEffect(() => {
+        // Restore saved state if exists
+        const savedState = stateManager.loadState();
+        if (savedState) {
+            setRequests(savedState.requests || []);
+            setLoading(savedState.loading !== undefined ? savedState.loading : false);
+            setSelectedRequest(savedState.selectedRequest || null);
+            setAssignModalRequest(savedState.assignModalRequest || null);
+        }
+
+        // Always fetch fresh data
         fetchRequests();
-    }, []);
+    }, [stateManager]);
 
     const fetchRequests = async () => {
         try {
@@ -90,6 +104,17 @@ const CustomerServiceDashboard = () => {
     const handleStatusChange = (req) => {
         setAssignModalRequest(req);
     };
+
+    // Save state whenever important values change
+    useEffect(() => {
+        const currentState = {
+            requests,
+            loading,
+            selectedRequest,
+            assignModalRequest
+        };
+        stateManager.saveState(currentState);
+    }, [requests, loading, selectedRequest, assignModalRequest, stateManager]);
 
     if (selectedRequest) {
         return (

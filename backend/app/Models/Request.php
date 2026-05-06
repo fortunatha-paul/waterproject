@@ -12,6 +12,7 @@ class Request extends Model
         'description',
         'location',
         'status',
+        'inspectorStatus',
         'priority',
         'assigned_staff',
         'deadline',

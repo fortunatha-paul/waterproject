@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import axios from 'axios';
+import DashboardStateManager from '../../../utils/dashboardState';
 
 const API_URL = 'http://localhost:8000/api';
 
@@ -11,63 +12,6 @@ const configureAxios = () => {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   }
 };
-
-const MOCK_INSPECTIONS = [
-  {
-    id: 'INS-001',
-    propertyId: 'PROP-456',
-    propertyAddress: '123 Main St, Sector 14',
-    inspectionType: 'New Connection',
-    date: '2026-04-30',
-    status: 'Scheduled',
-    inspector: 'John Smith',
-    priority: 'High',
-    estimatedDuration: '2 hours',
-    notes: 'New water connection installation verification'
-  },
-  {
-    id: 'INS-002',
-    propertyId: 'PROP-789',
-    propertyAddress: '456 Oak Avenue, Sector 22',
-    inspectionType: 'Repair Verification',
-    date: '2026-04-29',
-    status: 'In Progress',
-    inspector: 'John Smith',
-    priority: 'Medium',
-    estimatedDuration: '1 hour',
-    notes: 'Follow-up inspection on pipe repair'
-  },
-  {
-    id: 'INS-003',
-    propertyId: 'PROP-234',
-    propertyAddress: '789 Pine Road, Sector 9',
-    inspectionType: 'Complaint Resolution',
-    date: '2026-04-28',
-    status: 'Completed',
-    inspector: 'John Smith',
-    priority: 'Low',
-    estimatedDuration: '45 minutes',
-    notes: 'Water pressure issue resolved'
-  },
-  {
-    id: 'INS-004',
-    propertyId: 'PROP-567',
-    propertyAddress: '321 Elm Street, Sector 15',
-    inspectionType: 'Routine Inspection',
-    date: '2026-04-27',
-    status: 'Pending',
-    inspector: 'John Smith',
-    priority: 'Medium',
-    estimatedDuration: '1.5 hours',
-    notes: 'Annual system check'
-  }
-];
-
-const MOCK_REPORTS = [
-  { id: 'RPT-001', inspectionId: 'INS-003', title: 'Water Pressure Issue Report', date: '2026-04-28', status: 'Submitted' },
-  { id: 'RPT-002', inspectionId: 'INS-002', title: 'Repair Verification Report', date: '2026-04-29', status: 'Draft' },
-  { id: 'RPT-003', inspectionId: 'INS-001', title: 'New Connection Inspection', date: '2026-04-30', status: 'Pending' }
-];
 
 function SummaryCard({ icon, label, value, color, trend }) {
   return (
@@ -120,12 +64,15 @@ function SummaryCard({ icon, label, value, color, trend }) {
 
 function StatusBadge({ status }) {
   const statusConfig = {
-    'Scheduled': { color: '#3B82F6', bg: '#EFF6FF' },
+    'Pending': { color: '#6B7280', bg: '#F3F4F6' },
     'In Progress': { color: '#F59E0B', bg: '#FEF3C7' },
     'Completed': { color: '#10B981', bg: '#D1FAE5' },
-    'Pending': { color: '#6B7280', bg: '#F3F4F6' },
+    'Rejected': { color: '#EF4444', bg: '#FEE2E2' },
+    'Resolved': { color: '#10B981', bg: '#D1FAE5' },
     'Submitted': { color: '#10B981', bg: '#D1FAE5' },
-    'Draft': { color: '#F59E0B', bg: '#FEF3C7' }
+    'Draft': { color: '#F59E0B', bg: '#FEF3C7' },
+    'Solved': { color: '#10B981', bg: '#D1FAE5' },
+    'Not Solved': { color: '#F59E0B', bg: '#FEF3C7' }
   };
 
   const config = statusConfig[status] || { color: '#6B7280', bg: '#F3F4F6' };
@@ -170,10 +117,10 @@ function PriorityBadge({ priority }) {
 
 function ServiceRequestDetails({ inspection, onBack, onUpdateStatus }) {
   const [notes, setNotes] = useState(inspection.notes || '');
-  const [status, setStatus] = useState(inspection.status);
+  const [inspectorStatus, setInspectorStatus] = useState(inspection.inspectorStatus || 'Not Solved');
 
   const handleUpdate = () => {
-    onUpdateStatus(inspection.id, status, notes);
+    onUpdateStatus(inspection.id, inspectorStatus, notes);
     onBack();
   };
 
@@ -194,8 +141,8 @@ function ServiceRequestDetails({ inspection, onBack, onUpdateStatus }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20, marginBottom: 24 }}>
         <div>
-          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Property ID</label>
-          <div style={{ fontSize: 16, color: '#1f2937', fontWeight: 600, marginTop: 4 }}>{inspection.propertyId}</div>
+          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Customer Name</label>
+          <div style={{ fontSize: 16, color: '#1f2937', marginTop: 4 }}>{inspection.user?.name || 'N/A'}</div>
         </div>
         <div>
           <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Address</label>
@@ -214,26 +161,30 @@ function ServiceRequestDetails({ inspection, onBack, onUpdateStatus }) {
           <div style={{ marginTop: 4 }}><PriorityBadge priority={inspection.priority} /></div>
         </div>
         <div>
-          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Duration</label>
-          <div style={{ fontSize: 16, color: '#1f2937', marginTop: 4 }}>{inspection.estimatedDuration}</div>
+          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>House Number</label>
+          <div style={{ fontSize: 16, color: '#1f2937', marginTop: 4 }}>{inspection.user?.house_number || 'N/A'}</div>
         </div>
       </div>
 
-      <div style={{ marginBottom: 24 }}>
-        <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</label>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          style={{
-            width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #d1d5db',
-            fontSize: 14, marginTop: 8, background: '#fff', color: '#1f2937',
-          }}
-        >
-          <option value="Scheduled">Scheduled</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Completed">Completed</option>
-          <option value="Pending">Pending</option>
-        </select>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20, marginBottom: 24 }}>
+        <div>
+          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Customer Service Status</label>
+          <div style={{ marginTop: 4 }}><StatusBadge status={inspection.status} /></div>
+        </div>
+        <div>
+          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inspector Status</label>
+          <select
+            value={inspectorStatus}
+            onChange={(e) => setInspectorStatus(e.target.value)}
+            style={{
+              width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #d1d5db',
+              fontSize: 14, marginTop: 8, background: '#fff', color: '#1f2937',
+            }}
+          >
+            <option value="Not Solved">Not Solved</option>
+            <option value="Solved">Solved</option>
+          </select>
+        </div>
       </div>
 
       <div style={{ marginBottom: 24 }}>
@@ -270,32 +221,103 @@ function ServiceRequestDetails({ inspection, onBack, onUpdateStatus }) {
   );
 }
 
-export default function AdminDashboard() {
+export default function InspectorDashboard() {
   const { user, logout } = useAuth();
-  const [serviceRequests, setServiceRequests] = useState(MOCK_INSPECTIONS);
-  const [reports, setReports] = useState(MOCK_REPORTS);
+  const [serviceRequests, setServiceRequests] = useState([]);
   const [selectedServiceRequest, setSelectedServiceRequest] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Initialize dashboard state manager
+  const [stateManager] = useState(() => new DashboardStateManager('inspector'));
 
   // Calculate derived values
   const total = serviceRequests.length;
-  const scheduled = serviceRequests.filter(i => i.status === 'Scheduled').length;
-  const inProgress = serviceRequests.filter(i => i.status === 'In Progress').length;
-  const completed = serviceRequests.filter(i => i.status === 'Completed').length;
+  const notSolved = serviceRequests.filter(i => i.inspectorStatus !== 'Solved').length;
+  const solved = serviceRequests.filter(i => i.inspectorStatus === 'Solved').length;
 
-  // Load on component mount
+  // Load on component mount and restore state
   useEffect(() => {
     configureAxios();
-  }, []);
 
-  const handleUpdateServiceRequest = (id, status, notes) => {
-    setServiceRequests(prev => prev.map(req =>
-      req.id === id ? { ...req, status, notes } : req
-    ));
-    setSuccessMsg('Service request updated successfully!');
-    setTimeout(() => setSuccessMsg(''), 3000);
+    // Restore saved state if exists
+    const savedState = stateManager.loadState();
+    if (savedState) {
+      setServiceRequests(savedState.serviceRequests || []);
+      setSelectedServiceRequest(savedState.selectedServiceRequest || null);
+      setSuccessMsg(savedState.successMsg || '');
+      setLoading(savedState.loading !== undefined ? savedState.loading : false);
+    }
+
+    // Always fetch fresh data
+    fetchServiceRequests();
+  }, [stateManager]);
+
+  const fetchServiceRequests = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/requests`);
+      // Transform API data to match frontend structure
+      const transformedRequests = response.data.map(request => ({
+        id: `REQ-${request.id}`,
+        propertyId: `PROP-${request.id}`,
+        propertyAddress: request.location,
+        inspectionType: request.serve_type,
+        date: request.deadline || new Date().toISOString().split('T')[0],
+        status: request.status,
+        inspectorStatus: request.inspectorStatus || 'Not Solved',
+        inspector: request.assigned_staff,
+        priority: request.priority || 'Medium',
+        notes: request.description,
+        description: request.description,
+        comments: request.comments,
+        timeline: request.timeline,
+        user: request.user
+      }));
+      setServiceRequests(transformedRequests);
+    } catch (error) {
+      console.error('Error fetching service requests:', error);
+      setSuccessMsg('Error loading service requests');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleUpdateServiceRequest = async (id, inspectorStatus, notes) => {
+    try {
+      // Extract the actual request ID from the formatted ID (e.g., "REQ-1" -> "1")
+      const requestId = id.replace('REQ-', '');
+
+      // Update the database via API
+      await axios.put(`${API_URL}/requests/${requestId}`, {
+        inspectorStatus,
+        description: notes
+      });
+
+      // Update local state
+      setServiceRequests(prev => prev.map(req =>
+        req.id === id ? { ...req, inspectorStatus, notes } : req
+      ));
+
+      setSuccessMsg('Service request updated successfully!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (error) {
+      console.error('Error updating service request:', error);
+      setSuccessMsg('Error: Failed to update service request. Please try again.');
+      setTimeout(() => setSuccessMsg(''), 5000);
+    }
+  };
+
+  // Save state whenever important values change
+  useEffect(() => {
+    const currentState = {
+      serviceRequests,
+      selectedServiceRequest,
+      successMsg,
+      loading
+    };
+    stateManager.saveState(currentState);
+  }, [serviceRequests, selectedServiceRequest, successMsg, loading, stateManager]);
 
   if (selectedServiceRequest) {
     return (
@@ -361,7 +383,7 @@ export default function AdminDashboard() {
               marginBottom: 4,
               textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
             }}>
-              {user?.name || 'Admin'}
+              {user?.name || 'Inspector'}
             </div>
             <div style={{
               fontSize: 14,
@@ -394,7 +416,7 @@ export default function AdminDashboard() {
               color: '#ffffff',
               fontWeight: 700,
             }}>
-              {inProgress + scheduled}
+              {notSolved}
             </div>
           </div>
 
@@ -441,7 +463,7 @@ export default function AdminDashboard() {
           flexWrap: 'wrap', gap: 16, marginBottom: 24,
         }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1f2937', margin: 0 }}>
-            Admin Dashboard
+            Inspector Dashboard
           </h1>
         </div>
 
@@ -456,129 +478,136 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Summary Cards */}
-        <div style={{
-          display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 32,
-        }}>
-          <SummaryCard icon="" label="Total Requests" value={total} color="#6366F1" trend={{ type: 'up', value: 12 }} />
-          <SummaryCard icon="" label="Scheduled" value={scheduled} color="#F59E0B" />
-          <SummaryCard icon="" label="In Progress" value={inProgress} color="#3B82F6" />
-          <SummaryCard icon="" label="Completed" value={completed} color="#10B981" />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
-          {/* Inspections Table */}
+        {/* Loading State */}
+        {loading ? (
           <div style={{
-            background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.08)', overflow: 'hidden',
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            padding: '60px', background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: 32,
           }}>
-            <div style={{
-              padding: '20px 24px', borderBottom: '1px solid #f0f0f0',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            }}>
-              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1f2937', margin: 0 }}>
-                Scheduled Services
-              </h2>
-              <span style={{ fontSize: 13, color: '#9CA3AF' }}>
-                {serviceRequests.length} service request{serviceRequests.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
-                <thead>
-                  <tr style={{ background: '#F9FAFB' }}>
-                    {['ID', 'Property', 'Type', 'Date', 'Priority', 'Status', 'Action'].map((h) => (
-                      <th key={h} style={{
-                        padding: '12px 16px', textAlign: 'left', fontSize: 12,
-                        fontWeight: 600, color: '#6b7280', textTransform: 'uppercase',
-                        letterSpacing: '0.5px', borderBottom: '1px solid #E5E7EB',
-                      }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {serviceRequests.map((request) => (
-                    <tr key={request.id} style={{ borderBottom: '1px solid #f0f0f0', transition: 'background 0.15s' }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600, color: '#1f2937' }}>
-                        {request.id}
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ fontSize: 14, color: '#374151', fontWeight: 600 }}>{request.propertyId}</div>
-                        <div style={{ fontSize: 12, color: '#6b7280' }}>{request.propertyAddress}</div>
-                      </td>
-                      <td style={{ padding: '14px 16px', fontSize: 14, color: '#374151' }}>
-                        {request.inspectionType}
-                      </td>
-                      <td style={{ padding: '14px 16px', fontSize: 14, color: '#6b7280' }}>
-                        {request.date}
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <PriorityBadge priority={request.priority} />
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <StatusBadge status={request.status} />
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <button onClick={() => setSelectedServiceRequest(request)} style={{
-                          padding: '6px 14px', borderRadius: 6, border: '1px solid #3B82F6',
-                          background: '#EFF6FF', color: '#3B82F6', fontSize: 13, fontWeight: 600,
-                          cursor: 'pointer', transition: 'all 0.2s',
-                        }}>
-                          View Details
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                width: 40, height: 40, border: '4px solid #f3f3f3',
+                borderTop: '4px solid #3B82F6', borderRadius: '50%',
+                animation: 'spin 1s linear infinite', margin: '0 auto 16px'
+              }}></div>
+              <div style={{ fontSize: 14, color: '#ffffff', fontWeight: 700 }}>
+                {notSolved}
+              </div>
             </div>
           </div>
-
-          {/* Recent Reports */}
-          <div style={{
-            background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.08)', overflow: 'hidden',
-          }}>
+        ) : (
+          <>
+            {/* Summary Cards */}
             <div style={{
-              padding: '20px 24px', borderBottom: '1px solid #f0f0f0',
+              display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 32,
             }}>
-              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1f2937', margin: 0 }}>
-                Recent Reports
-              </h2>
+              <SummaryCard icon="" label="Total Requests" value={total} color="#6366F1" trend={{ type: 'up', value: 12 }} />
+              <SummaryCard icon="" label="Not Solved" value={notSolved} color="#F59E0B" />
+              <SummaryCard icon="" label="Solved" value={solved} color="#10B981" />
             </div>
-            <div style={{ padding: '16px' }}>
-              {reports.map((report) => (
-                <div key={report.id} style={{
-                  padding: '12px', borderRadius: 8, border: '1px solid #f0f0f0',
-                  marginBottom: 12, background: '#FAFAFA',
-                  transition: 'all 0.2s',
-                }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#F3F4F6'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = '#FAFAFA'}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#1f2937' }}>
-                      {report.title}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
+              {/* Inspections Table */}
+              <div style={{
+                background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)', overflow: 'hidden',
+              }}>
+                <div style={{
+                  padding: '20px 24px', borderBottom: '1px solid #f0f0f0',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
+                  <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1f2937', margin: 0 }}>
+                    Assigned Services
+                  </h2>
+                  <span style={{ fontSize: 13, color: '#9CA3AF' }}>
+                    {serviceRequests.length} service request{serviceRequests.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+                    <thead>
+                      <tr style={{ background: '#F9FAFB' }}>
+                        {['ID', 'Property', 'Type', 'Date', 'Priority', 'Status', 'Action'].map((h) => (
+                          <th key={h} style={{
+                            padding: '12px 16px', textAlign: 'left', fontSize: 12,
+                            fontWeight: 600, color: '#6b7280', textTransform: 'uppercase',
+                            letterSpacing: '0.5px', borderBottom: '1px solid #E5E7EB',
+                          }}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {serviceRequests.map((request) => (
+                        <tr key={request.id} style={{ borderBottom: '1px solid #f0f0f0', transition: 'background 0.15s' }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600, color: '#1f2937' }}>
+                            {request.id}
+                          </td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <div style={{ fontSize: 14, color: '#374151', fontWeight: 600 }}>{request.propertyId}</div>
+                            <div style={{ fontSize: 12, color: '#6b7280' }}>{request.propertyAddress}</div>
+                          </td>
+                          <td style={{ padding: '14px 16px', fontSize: 14, color: '#374151' }}>
+                            {request.inspectionType}
+                          </td>
+                          <td style={{ padding: '14px 16px', fontSize: 14, color: '#6b7280' }}>
+                            {request.date}
+                          </td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <PriorityBadge priority={request.priority} />
+                          </td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <StatusBadge status={request.inspectorStatus} />
+                          </td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <button onClick={() => setSelectedServiceRequest(request)} style={{
+                              padding: '6px 14px', borderRadius: 6, border: '1px solid #3B82F6',
+                              background: '#EFF6FF', color: '#3B82F6', fontSize: 13, fontWeight: 600,
+                              cursor: 'pointer', transition: 'all 0.2s',
+                            }}>
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Recent Reports */}
+              <div style={{
+                background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)', overflow: 'hidden',
+              }}>
+                <div style={{
+                  padding: '20px 24px', borderBottom: '1px solid #f0f0f0',
+                }}>
+                  <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1f2937', margin: 0 }}>
+                    Recent Reports
+                  </h2>
+                </div>
+                <div style={{ padding: '16px' }}>
+                  <div style={{
+                    padding: '12px', borderRadius: 8, border: '1px solid #f0f0f0',
+                    marginBottom: 12, background: '#FAFAFA',
+                    transition: 'all 0.2s',
+                  }}>
+                    <div style={{ fontSize: 14, color: '#6b7280', textAlign: 'center' }}>
+                      No reports available
                     </div>
-                    <StatusBadge status={report.status} />
-                  </div>
-                  <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
-                    ID: {report.id}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>
-                    Date: {report.date}
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
