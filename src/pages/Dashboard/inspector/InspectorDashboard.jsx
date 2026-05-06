@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import axios from 'axios';
+import DashboardStateManager from '../../../utils/dashboardState';
 
 const API_URL = 'http://localhost:8000/api';
 
@@ -63,14 +64,8 @@ function SummaryCard({ icon, label, value, color, trend }) {
 
 function StatusBadge({ status }) {
   const statusConfig = {
-    'Pending': { color: '#6B7280', bg: '#F3F4F6' },
-    'In Progress': { color: '#F59E0B', bg: '#FEF3C7' },
     'Completed': { color: '#10B981', bg: '#D1FAE5' },
-    'Rejected': { color: '#EF4444', bg: '#FEE2E2' },
-    'Resolved': { color: '#10B981', bg: '#D1FAE5' },
-    'Scheduled': { color: '#3B82F6', bg: '#EFF6FF' },
-    'Submitted': { color: '#10B981', bg: '#D1FAE5' },
-    'Draft': { color: '#F59E0B', bg: '#FEF3C7' }
+    'Uncomplete': { color: '#F59E0B', bg: '#FEF3C7' }
   };
 
   const config = statusConfig[status] || { color: '#6B7280', bg: '#F3F4F6' };
@@ -174,11 +169,8 @@ function ServiceRequestDetails({ inspection, onBack, onUpdateStatus }) {
             fontSize: 14, marginTop: 8, background: '#fff', color: '#1f2937',
           }}
         >
-          <option value="Pending">Pending</option>
-          <option value="In Progress">In Progress</option>
+          <option value="Uncomplete">Uncomplete</option>
           <option value="Completed">Completed</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Resolved">Resolved</option>
         </select>
       </div>
 
@@ -223,17 +215,30 @@ export default function InspectorDashboard() {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Initialize dashboard state manager
+  const [stateManager] = useState(() => new DashboardStateManager('inspector'));
+
   // Calculate derived values
   const total = serviceRequests.length;
-  const scheduled = serviceRequests.filter(i => i.status === 'Scheduled').length;
-  const inProgress = serviceRequests.filter(i => i.status === 'In Progress').length;
+  const uncomplete = serviceRequests.filter(i => i.status !== 'Completed').length;
   const completed = serviceRequests.filter(i => i.status === 'Completed').length;
 
-  // Load on component mount
+  // Load on component mount and restore state
   useEffect(() => {
     configureAxios();
+
+    // Restore saved state if exists
+    const savedState = stateManager.loadState();
+    if (savedState) {
+      setServiceRequests(savedState.serviceRequests || []);
+      setSelectedServiceRequest(savedState.selectedServiceRequest || null);
+      setSuccessMsg(savedState.successMsg || '');
+      setLoading(savedState.loading !== undefined ? savedState.loading : false);
+    }
+
+    // Always fetch fresh data
     fetchServiceRequests();
-  }, []);
+  }, [stateManager]);
 
   const fetchServiceRequests = async () => {
     try {
@@ -246,7 +251,7 @@ export default function InspectorDashboard() {
         propertyAddress: request.location,
         inspectionType: request.serve_type,
         date: request.deadline || new Date().toISOString().split('T')[0],
-        status: request.status,
+        status: request.status === 'Completed' ? 'Completed' : 'Uncomplete',
         inspector: request.assigned_staff,
         priority: request.priority || 'Medium',
         estimatedDuration: '2 hours',
@@ -271,6 +276,17 @@ export default function InspectorDashboard() {
     setSuccessMsg('Service request updated successfully!');
     setTimeout(() => setSuccessMsg(''), 3000);
   };
+
+  // Save state whenever important values change
+  useEffect(() => {
+    const currentState = {
+      serviceRequests,
+      selectedServiceRequest,
+      successMsg,
+      loading
+    };
+    stateManager.saveState(currentState);
+  }, [serviceRequests, selectedServiceRequest, successMsg, loading, stateManager]);
 
   if (selectedServiceRequest) {
     return (
@@ -369,7 +385,7 @@ export default function InspectorDashboard() {
               color: '#ffffff',
               fontWeight: 700,
             }}>
-              {inProgress + scheduled}
+              {inProgress}
             </div>
           </div>
 
@@ -434,7 +450,7 @@ export default function InspectorDashboard() {
         {/* Loading State */}
         {loading ? (
           <div style={{
-            display: 'flex', justifyContent: 'center', alignItems: 'center', 
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
             padding: '60px', background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0',
             boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: 32,
           }}>
@@ -444,8 +460,8 @@ export default function InspectorDashboard() {
                 borderTop: '4px solid #3B82F6', borderRadius: '50%',
                 animation: 'spin 1s linear infinite', margin: '0 auto 16px'
               }}></div>
-              <div style={{ fontSize: 16, color: '#6b7280', fontWeight: 500 }}>
-                Loading assigned requests...
+              <div style={{ fontSize: 14, color: '#ffffff', fontWeight: 700 }}>
+                {uncomplete}
               </div>
             </div>
           </div>
@@ -456,8 +472,7 @@ export default function InspectorDashboard() {
               display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 32,
             }}>
               <SummaryCard icon="" label="Total Requests" value={total} color="#6366F1" trend={{ type: 'up', value: 12 }} />
-              <SummaryCard icon="" label="Scheduled" value={scheduled} color="#F59E0B" />
-              <SummaryCard icon="" label="In Progress" value={inProgress} color="#3B82F6" />
+              <SummaryCard icon="" label="Uncomplete" value={uncomplete} color="#F59E0B" />
               <SummaryCard icon="" label="Completed" value={completed} color="#10B981" />
             </div>
 

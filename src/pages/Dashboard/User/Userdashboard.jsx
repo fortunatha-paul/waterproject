@@ -5,6 +5,7 @@ import StatusBadge from './components/StatusBadge';
 import NewRequestForm from './components/NewRequestForm';
 import RequestDetails from './components/RequestDetails';
 import axios from 'axios';
+import DashboardStateManager from '../../../utils/dashboardState';
 
 const API_URL = 'http://localhost:8000/api';
 
@@ -23,6 +24,9 @@ export default function UserDashboard() {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Initialize dashboard state manager
+  const [stateManager] = useState(() => new DashboardStateManager('user'));
 
   // Fetch requests from API
   const fetchRequests = async () => {
@@ -51,16 +55,28 @@ export default function UserDashboard() {
     }
   };
 
-  // Load requests on component mount and set up periodic refresh
+  // Load requests on component mount, restore state, and set up periodic refresh
   useEffect(() => {
     configureAxios();
+
+    // Restore saved state if exists
+    const savedState = stateManager.loadState();
+    if (savedState) {
+      setRequests(savedState.requests || []);
+      setShowForm(savedState.showForm || false);
+      setSelectedRequest(savedState.selectedRequest || null);
+      setSuccessMsg(savedState.successMsg || '');
+      setLoading(savedState.loading !== undefined ? savedState.loading : false);
+    }
+
+    // Always fetch fresh data
     fetchRequests();
 
     // Set up periodic refresh to get real-time updates
     const interval = setInterval(fetchRequests, 10000); // Refresh every 10 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [stateManager]);
 
   const total = requests.length;
   const pending = requests.filter((r) => r.status === 'Pending').length;
@@ -90,6 +106,18 @@ export default function UserDashboard() {
       setLoading(false);
     }
   };
+
+  // Save state whenever important values change
+  useEffect(() => {
+    const currentState = {
+      requests,
+      showForm,
+      selectedRequest,
+      successMsg,
+      loading
+    };
+    stateManager.saveState(currentState);
+  }, [requests, showForm, selectedRequest, successMsg, loading, stateManager]);
 
   if (selectedRequest) {
     return (
