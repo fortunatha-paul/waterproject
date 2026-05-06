@@ -100,7 +100,7 @@ class RequestController extends Controller
             'serve_type' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'location' => 'sometimes|string|max:255',
-            'status' => 'sometimes|string|in:Pending,In Progress,Completed,Rejected,Resolved',
+            'status' => 'sometimes|string|in:Pending,In Progress,Rejected,Resolved',
             'inspectorStatus' => 'sometimes|string|in:Solved,Not Solved',
             'priority' => 'sometimes|string|in:Low,Medium,High,Urgent',
             'assigned_staff' => 'sometimes|nullable|string|max:255',
