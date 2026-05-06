@@ -64,8 +64,15 @@ function SummaryCard({ icon, label, value, color, trend }) {
 
 function StatusBadge({ status }) {
   const statusConfig = {
+    'Pending': { color: '#6B7280', bg: '#F3F4F6' },
+    'In Progress': { color: '#F59E0B', bg: '#FEF3C7' },
     'Completed': { color: '#10B981', bg: '#D1FAE5' },
-    'Uncomplete': { color: '#F59E0B', bg: '#FEF3C7' }
+    'Rejected': { color: '#EF4444', bg: '#FEE2E2' },
+    'Resolved': { color: '#10B981', bg: '#D1FAE5' },
+    'Submitted': { color: '#10B981', bg: '#D1FAE5' },
+    'Draft': { color: '#F59E0B', bg: '#FEF3C7' },
+    'Solved': { color: '#10B981', bg: '#D1FAE5' },
+    'Not Solved': { color: '#F59E0B', bg: '#FEF3C7' }
   };
 
   const config = statusConfig[status] || { color: '#6B7280', bg: '#F3F4F6' };
@@ -110,10 +117,10 @@ function PriorityBadge({ priority }) {
 
 function ServiceRequestDetails({ inspection, onBack, onUpdateStatus }) {
   const [notes, setNotes] = useState(inspection.notes || '');
-  const [status, setStatus] = useState(inspection.status);
+  const [inspectorStatus, setInspectorStatus] = useState(inspection.inspectorStatus || 'Not Solved');
 
   const handleUpdate = () => {
-    onUpdateStatus(inspection.id, status, notes);
+    onUpdateStatus(inspection.id, inspectorStatus, notes);
     onBack();
   };
 
@@ -134,8 +141,8 @@ function ServiceRequestDetails({ inspection, onBack, onUpdateStatus }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20, marginBottom: 24 }}>
         <div>
-          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Property ID</label>
-          <div style={{ fontSize: 16, color: '#1f2937', fontWeight: 600, marginTop: 4 }}>{inspection.propertyId}</div>
+          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Customer Name</label>
+          <div style={{ fontSize: 16, color: '#1f2937', marginTop: 4 }}>{inspection.user?.name || 'N/A'}</div>
         </div>
         <div>
           <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Address</label>
@@ -154,24 +161,30 @@ function ServiceRequestDetails({ inspection, onBack, onUpdateStatus }) {
           <div style={{ marginTop: 4 }}><PriorityBadge priority={inspection.priority} /></div>
         </div>
         <div>
-          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Duration</label>
-          <div style={{ fontSize: 16, color: '#1f2937', marginTop: 4 }}>{inspection.estimatedDuration}</div>
+          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>House Number</label>
+          <div style={{ fontSize: 16, color: '#1f2937', marginTop: 4 }}>{inspection.user?.house_number || 'N/A'}</div>
         </div>
       </div>
 
-      <div style={{ marginBottom: 24 }}>
-        <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</label>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          style={{
-            width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #d1d5db',
-            fontSize: 14, marginTop: 8, background: '#fff', color: '#1f2937',
-          }}
-        >
-          <option value="Uncomplete">Uncomplete</option>
-          <option value="Completed">Completed</option>
-        </select>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20, marginBottom: 24 }}>
+        <div>
+          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Customer Service Status</label>
+          <div style={{ marginTop: 4 }}><StatusBadge status={inspection.status} /></div>
+        </div>
+        <div>
+          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inspector Status</label>
+          <select
+            value={inspectorStatus}
+            onChange={(e) => setInspectorStatus(e.target.value)}
+            style={{
+              width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #d1d5db',
+              fontSize: 14, marginTop: 8, background: '#fff', color: '#1f2937',
+            }}
+          >
+            <option value="Not Solved">Not Solved</option>
+            <option value="Solved">Solved</option>
+          </select>
+        </div>
       </div>
 
       <div style={{ marginBottom: 24 }}>
@@ -220,8 +233,8 @@ export default function InspectorDashboard() {
 
   // Calculate derived values
   const total = serviceRequests.length;
-  const uncomplete = serviceRequests.filter(i => i.status !== 'Completed').length;
-  const completed = serviceRequests.filter(i => i.status === 'Completed').length;
+  const notSolved = serviceRequests.filter(i => i.inspectorStatus !== 'Solved').length;
+  const solved = serviceRequests.filter(i => i.inspectorStatus === 'Solved').length;
 
   // Load on component mount and restore state
   useEffect(() => {
@@ -251,14 +264,15 @@ export default function InspectorDashboard() {
         propertyAddress: request.location,
         inspectionType: request.serve_type,
         date: request.deadline || new Date().toISOString().split('T')[0],
-        status: request.status === 'Completed' ? 'Completed' : 'Uncomplete',
+        status: request.status,
+        inspectorStatus: request.inspectorStatus || 'Not Solved',
         inspector: request.assigned_staff,
         priority: request.priority || 'Medium',
-        estimatedDuration: '2 hours',
         notes: request.description,
         description: request.description,
         comments: request.comments,
-        timeline: request.timeline
+        timeline: request.timeline,
+        user: request.user
       }));
       setServiceRequests(transformedRequests);
     } catch (error) {
@@ -269,12 +283,29 @@ export default function InspectorDashboard() {
     }
   };
 
-  const handleUpdateServiceRequest = (id, status, notes) => {
-    setServiceRequests(prev => prev.map(req =>
-      req.id === id ? { ...req, status, notes } : req
-    ));
-    setSuccessMsg('Service request updated successfully!');
-    setTimeout(() => setSuccessMsg(''), 3000);
+  const handleUpdateServiceRequest = async (id, inspectorStatus, notes) => {
+    try {
+      // Extract the actual request ID from the formatted ID (e.g., "REQ-1" -> "1")
+      const requestId = id.replace('REQ-', '');
+
+      // Update the database via API
+      await axios.put(`${API_URL}/requests/${requestId}`, {
+        inspectorStatus,
+        description: notes
+      });
+
+      // Update local state
+      setServiceRequests(prev => prev.map(req =>
+        req.id === id ? { ...req, inspectorStatus, notes } : req
+      ));
+
+      setSuccessMsg('Service request updated successfully!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (error) {
+      console.error('Error updating service request:', error);
+      setSuccessMsg('Error: Failed to update service request. Please try again.');
+      setTimeout(() => setSuccessMsg(''), 5000);
+    }
   };
 
   // Save state whenever important values change
@@ -385,7 +416,7 @@ export default function InspectorDashboard() {
               color: '#ffffff',
               fontWeight: 700,
             }}>
-              {inProgress}
+              {notSolved}
             </div>
           </div>
 
@@ -461,7 +492,7 @@ export default function InspectorDashboard() {
                 animation: 'spin 1s linear infinite', margin: '0 auto 16px'
               }}></div>
               <div style={{ fontSize: 14, color: '#ffffff', fontWeight: 700 }}>
-                {uncomplete}
+                {notSolved}
               </div>
             </div>
           </div>
@@ -472,8 +503,8 @@ export default function InspectorDashboard() {
               display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 32,
             }}>
               <SummaryCard icon="" label="Total Requests" value={total} color="#6366F1" trend={{ type: 'up', value: 12 }} />
-              <SummaryCard icon="" label="Uncomplete" value={uncomplete} color="#F59E0B" />
-              <SummaryCard icon="" label="Completed" value={completed} color="#10B981" />
+              <SummaryCard icon="" label="Not Solved" value={notSolved} color="#F59E0B" />
+              <SummaryCard icon="" label="Solved" value={solved} color="#10B981" />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
@@ -532,7 +563,7 @@ export default function InspectorDashboard() {
                             <PriorityBadge priority={request.priority} />
                           </td>
                           <td style={{ padding: '14px 16px' }}>
-                            <StatusBadge status={request.status} />
+                            <StatusBadge status={request.inspectorStatus} />
                           </td>
                           <td style={{ padding: '14px 16px' }}>
                             <button onClick={() => setSelectedServiceRequest(request)} style={{

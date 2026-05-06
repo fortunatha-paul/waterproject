@@ -24,6 +24,7 @@ export default function UserDashboard() {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [updatedRequests, setUpdatedRequests] = useState(new Set());
 
   // Initialize dashboard state manager
   const [stateManager] = useState(() => new DashboardStateManager('user'));
@@ -38,16 +39,33 @@ export default function UserDashboard() {
         serviceType: req.serve_type,
         date: new Date(req.created_at).toISOString().split('T')[0],
         status: req.status || 'Pending',
+        inspectorStatus: req.inspectorStatus || 'Not Solved',
         description: req.description,
         location: req.location,
         technician: req.assigned_staff,
         expectedCompletion: req.deadline,
-        stage: req.status === 'Completed' ? 3 : req.status === 'In Progress' ? 2 : req.status === 'Pending' ? 1 : 0,
+        stage: req.status === 'Completed' ? 4 : req.status === 'In Progress' ? 3 : req.status === 'Pending' ? 2 : 1,
         priority: req.priority || 'Medium',
         comments: Array.isArray(req.comments) ? req.comments : [],
         timeline: Array.isArray(req.timeline) ? req.timeline : [],
       }));
+
+      // Check for inspector status changes
+      const newUpdatedRequests = new Set();
+      transformedRequests.forEach(newReq => {
+        const oldReq = requests.find(r => r.id === newReq.id);
+        if (oldReq && oldReq.inspectorStatus !== newReq.inspectorStatus) {
+          newUpdatedRequests.add(newReq.id);
+        }
+      });
+
+      setUpdatedRequests(newUpdatedRequests);
       setRequests(transformedRequests);
+
+      // Clear highlights after 3 seconds
+      if (newUpdatedRequests.size > 0) {
+        setTimeout(() => setUpdatedRequests(new Set()), 3000);
+      }
     } catch (error) {
       console.error('Error fetching requests:', error);
       // Set empty array if API fails - no fallback to mock data
@@ -73,7 +91,7 @@ export default function UserDashboard() {
     fetchRequests();
 
     // Set up periodic refresh to get real-time updates
-    const interval = setInterval(fetchRequests, 10000); // Refresh every 10 seconds
+    const interval = setInterval(fetchRequests, 5000); // Refresh every 5 seconds for better real-time updates
 
     return () => clearInterval(interval);
   }, [stateManager]);
@@ -317,7 +335,7 @@ export default function UserDashboard() {
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
               <thead>
                 <tr style={{ background: '#F9FAFB' }}>
-                  {['Request ID', 'Service Type', 'Date Submitted', 'Status', 'Action'].map((h) => (
+                  {['Request ID', 'Service Type', 'Date Submitted', 'Status', 'Inspector Status', 'Action'].map((h) => (
                     <th key={h} style={{
                       padding: '12px 20px', textAlign: 'left', fontSize: 12,
                       fontWeight: 600, color: '#6b7280', textTransform: 'uppercase',
@@ -330,9 +348,14 @@ export default function UserDashboard() {
               </thead>
               <tbody>
                 {requests.map((req) => (
-                  <tr key={req.id} style={{ borderBottom: '1px solid #f0f0f0', transition: 'background 0.15s' }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  <tr key={req.id} style={{
+                    borderBottom: '1px solid #f0f0f0',
+                    transition: 'background 0.15s',
+                    backgroundColor: updatedRequests.has(req.id) ? '#FEF3C7' : 'transparent',
+                    borderLeft: updatedRequests.has(req.id) ? '4px solid #F59E0B' : 'none'
+                  }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = updatedRequests.has(req.id) ? '#FEF3C7' : '#F9FAFB'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = updatedRequests.has(req.id) ? '#FEF3C7' : 'transparent'}
                   >
                     <td style={{ padding: '14px 20px', fontSize: 14, fontWeight: 600, color: '#1f2937' }}>
                       {req.id}
@@ -345,6 +368,9 @@ export default function UserDashboard() {
                     </td>
                     <td style={{ padding: '14px 20px' }}>
                       <StatusBadge status={req.status} />
+                    </td>
+                    <td style={{ padding: '14px 20px' }}>
+                      <StatusBadge status={req.inspectorStatus} />
                     </td>
                     <td style={{ padding: '14px 20px' }}>
                       <button onClick={() => setSelectedRequest(req)} style={{

@@ -56,6 +56,12 @@ export default function RequestDetails({ request, onBack }) {
             <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Expected Completion</div>
             <div style={{ fontSize: 14, color: '#374151' }}>{request.expectedCompletion || 'TBD'}</div>
           </div>
+          <div>
+            <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Inspector Status</div>
+            <div style={{ marginTop: 4 }}>
+              <StatusBadge status={request.inspectorStatus || 'Not Solved'} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
