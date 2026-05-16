@@ -115,12 +115,15 @@ export const AuthProvider = ({ children }) => {
       case 'inspector':
         navigate('/dashboard/inspector');
         break;
+      case 'finance':
+        navigate('/dashboard/finance');
+        break;
       case 'user':
       case 'customer':
         navigate('/dashboard/user');
         break;
       default:
-        navigate('/dashboard/user');
+        navigate('/dashboard/finance');
     }
   };
 
