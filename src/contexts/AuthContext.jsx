@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const SESSION_TIMEOUT = 2 * 60 * 1000; // 2 minutes in milliseconds
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -32,6 +33,42 @@ export const AuthProvider = ({ children }) => {
     }
     setLoading(false);
   }, []);
+
+  // Session timeout logic
+  useEffect(() => {
+    if (!user) return;
+
+    let timeoutId;
+    let lastActivity = Date.now();
+
+    const resetTimer = () => {
+      lastActivity = Date.now();
+    };
+
+    const checkInactivity = () => {
+      const timeSinceLastActivity = Date.now() - lastActivity;
+      if (timeSinceLastActivity >= SESSION_TIMEOUT) {
+        console.log('Session timeout - logging out user');
+        logout();
+      }
+    };
+
+    // Track user activity
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    activityEvents.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    // Check for inactivity every 10 seconds
+    timeoutId = setInterval(checkInactivity, 10000);
+
+    return () => {
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+      clearInterval(timeoutId);
+    };
+  }, [user]);
 
   const login = async (credentials) => {
     try {
