@@ -22,6 +22,11 @@ class RequestController extends Controller
             $requests = RequestModel::with('user')
                 ->where('assigned_staff', $user->name)
                 ->get();
+        } elseif ($user->isFinance()) {
+            // For finance, show billing-related requests
+            $requests = RequestModel::with('user')
+                ->where('serve_type', 'Billing Issue')
+                ->get();
         } else {
             // For customers, show only their own requests
             $requests = RequestModel::where('user_id', $user->id)->get();
@@ -62,6 +67,12 @@ class RequestController extends Controller
                 ->where('id', $id)
                 ->where('assigned_staff', $user->name)
                 ->first();
+        } elseif ($user->isFinance()) {
+            // For finance, show billing-related requests
+            $request = RequestModel::with('user')
+                ->where('id', $id)
+                ->where('serve_type', 'Billing Issue')
+                ->first();
         } else {
             // For customers, show only their own requests
             $request = RequestModel::where('id', $id)->where('user_id', $user->id)->first();
@@ -80,13 +91,18 @@ class RequestController extends Controller
     {
         $user = auth()->user();
         
-        // Find request - customer service can update any request, inspectors can update assigned requests, others only their own
+        // Find request - customer service can update any request, inspectors can update assigned requests, finance can update billing requests, others only their own
         if ($user->isCustomerService()) {
             $requestModel = RequestModel::where('id', $id)->first();
         } elseif ($user->isInspector()) {
             // For inspectors, check if request is assigned to them
             $requestModel = RequestModel::where('id', $id)
                 ->where('assigned_staff', $user->name)
+                ->first();
+        } elseif ($user->isFinance()) {
+            // For finance, check if request is billing-related
+            $requestModel = RequestModel::where('id', $id)
+                ->where('serve_type', 'Billing Issue')
                 ->first();
         } else {
             $requestModel = RequestModel::where('id', $id)->where('user_id', $user->id)->first();
@@ -107,6 +123,8 @@ class RequestController extends Controller
             'deadline' => 'sometimes|nullable|date',
             'comments' => 'sometimes|nullable|array',
             'timeline' => 'sometimes|nullable|array',
+            'amount' => 'sometimes|nullable|numeric|min:0',
+            'payment_status' => 'sometimes|string|in:Unpaid,Pending,Paid,Overdue',
         ]);
 
         // Auto-update status to 'Completed' when inspectorStatus is set to 'Solved'

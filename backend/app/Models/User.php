@@ -85,4 +85,12 @@ class User extends Authenticatable
     {
         return $this->role === 'inspector';
     }
+
+    /**
+     * Check if user is finance
+     */
+    public function isFinance(): bool
+    {
+        return $this->role === 'finance';
+    }
 }
