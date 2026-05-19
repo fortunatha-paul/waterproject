@@ -8,6 +8,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 // Dashboard imports (update these paths based on your actual dashboard structure)
 import CustomerDashboard from '../pages/Dashboard/Custome Service/Customerservicedashboard';
 import InspectorDashboard from '../pages/Dashboard/inspector/InspectorDashboard';
+import Finance from '../pages/Dashboard/finance/Finance';
 
 const AuthLayout = () => (
   <AuthProvider>
@@ -60,6 +61,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredRole="inspector">
             <InspectorDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/dashboard/finance',
+        element: (
+          <ProtectedRoute requiredRole="finance">
+            <Finance />
           </ProtectedRoute>
         ),
       },

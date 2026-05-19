@@ -18,6 +18,8 @@ class Request extends Model
         'deadline',
         'comments',
         'timeline',
+        'amount',
+        'payment_status',
     ];
 
     /**
