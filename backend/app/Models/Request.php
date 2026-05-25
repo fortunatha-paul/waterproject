@@ -15,6 +15,7 @@ class Request extends Model
         'inspectorStatus',
         'priority',
         'assigned_staff',
+        'assigned_inspector_id',
         'deadline',
         'comments',
         'timeline',

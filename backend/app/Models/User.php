@@ -93,4 +93,12 @@ class User extends Authenticatable
     {
         return $this->role === 'finance';
     }
+
+    /**
+     * Check if user is HOD Sanitation
+     */
+    public function isHODSanitation(): bool
+    {
+        return $this->role === 'hod_sanitation';
+    }
 }

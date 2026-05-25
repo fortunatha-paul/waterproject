@@ -9,6 +9,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import CustomerDashboard from '../pages/Dashboard/Custome Service/Customerservicedashboard';
 import InspectorDashboard from '../pages/Dashboard/inspector/InspectorDashboard';
 import Finance from '../pages/Dashboard/finance/Finance';
+import HODSanitation from '../pages/Dashboard/water and sanitation/HODSanitation';
 
 const AuthLayout = () => (
   <AuthProvider>
@@ -69,6 +70,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredRole="finance">
             <Finance />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/dashboard/hod-sanitation',
+        element: (
+          <ProtectedRoute requiredRole="hod_sanitation">
+            <HODSanitation />
           </ProtectedRoute>
         ),
       },
