@@ -3,7 +3,7 @@ import StatusBadge from './StatusBadge';
 
 const FILTER_FIELDS = [
   { key: 'status', label: 'Status', options: ['All', 'Pending', 'In Progress', 'Completed', 'Rejected'] },
-  { key: 'serviceType', label: 'Service Type', options: ['All', 'New Connection', 'Repair', 'Complaint', 'Maintenance', 'Billing'] },
+  { key: 'serviceType', label: 'Service Type', options: ['All', 'Meter Repair', 'Meter Replacement', 'No Water Supply'] },
   { key: 'location', label: 'Location', options: ['All', 'Block B, Sector 14', 'House 45, Lane 7', 'Flat 302, Tower A', 'Shop 12, Market Road', 'House 78, Sector 22', 'Block C, Sector 9'] },
 ];
 

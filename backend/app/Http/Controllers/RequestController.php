@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Request as RequestModel;
+use App\Models\User;
 
 class RequestController extends Controller
 {
@@ -13,10 +14,12 @@ class RequestController extends Controller
     public function index()
     {
         $user = auth()->user();
-        
-        // If user is customer service, show all requests
+
+        // If user is customer service, show only customer service related requests
         if ($user->isCustomerService()) {
-            $requests = RequestModel::with('user')->get();
+            $requests = RequestModel::with('user')
+                ->whereIn('serve_type', ['Meter Repair', 'Meter Replacement', 'No Water Supply'])
+                ->get();
         } elseif ($user->isInspector()) {
             // For inspectors, show requests assigned to them
             $requests = RequestModel::with('user')
@@ -27,11 +30,16 @@ class RequestController extends Controller
             $requests = RequestModel::with('user')
                 ->where('serve_type', 'Billing Issue')
                 ->get();
+        } elseif ($user->isHODSanitation()) {
+            // For HOD Sanitation, show new connection and sewerage problem requests
+            $requests = RequestModel::with('user')
+                ->whereIn('serve_type', ['New Connection', 'Sewerage Problem'])
+                ->get();
         } else {
             // For customers, show only their own requests
             $requests = RequestModel::where('user_id', $user->id)->get();
         }
-        
+
         return response()->json($requests);
     }
 
@@ -57,10 +65,13 @@ class RequestController extends Controller
     public function show(string $id)
     {
         $user = auth()->user();
-        
-        // If user is customer service, show any request
+
+        // If user is customer service, show any customer service related request
         if ($user->isCustomerService()) {
-            $request = RequestModel::with('user')->where('id', $id)->first();
+            $request = RequestModel::with('user')
+                ->where('id', $id)
+                ->whereIn('serve_type', ['Meter Repair', 'Meter Replacement', 'No Water Supply'])
+                ->first();
         } elseif ($user->isInspector()) {
             // For inspectors, show requests assigned to them
             $request = RequestModel::with('user')
@@ -73,11 +84,17 @@ class RequestController extends Controller
                 ->where('id', $id)
                 ->where('serve_type', 'Billing Issue')
                 ->first();
+        } elseif ($user->isHODSanitation()) {
+            // For HOD Sanitation, show new connection and sewerage problem requests
+            $request = RequestModel::with('user')
+                ->where('id', $id)
+                ->whereIn('serve_type', ['New Connection', 'Sewerage Problem'])
+                ->first();
         } else {
             // For customers, show only their own requests
             $request = RequestModel::where('id', $id)->where('user_id', $user->id)->first();
         }
-        
+
         if (!$request) {
             return response()->json(['message' => 'Request not found'], 404);
         }
@@ -90,8 +107,8 @@ class RequestController extends Controller
     public function update(Request $request, string $id)
     {
         $user = auth()->user();
-        
-        // Find request - customer service can update any request, inspectors can update assigned requests, finance can update billing requests, others only their own
+
+        // Find request - customer service can update any request, inspectors can update assigned requests, finance can update billing requests, HOD Sanitation can update sanitation requests, others only their own
         if ($user->isCustomerService()) {
             $requestModel = RequestModel::where('id', $id)->first();
         } elseif ($user->isInspector()) {
@@ -104,10 +121,15 @@ class RequestController extends Controller
             $requestModel = RequestModel::where('id', $id)
                 ->where('serve_type', 'Billing Issue')
                 ->first();
+        } elseif ($user->isHODSanitation()) {
+            // For HOD Sanitation, check if request is new connection or sewerage problem
+            $requestModel = RequestModel::where('id', $id)
+                ->whereIn('serve_type', ['New Connection', 'Sewerage Problem'])
+                ->first();
         } else {
             $requestModel = RequestModel::where('id', $id)->where('user_id', $user->id)->first();
         }
-        
+
         if (!$requestModel) {
             return response()->json(['message' => 'Request not found'], 404);
         }
@@ -134,6 +156,45 @@ class RequestController extends Controller
 
         $requestModel->update($validated);
         return response()->json($requestModel);
+    }
+
+    /**
+     * Assign an inspector to a request.
+     */
+    public function assignInspector(Request $request, string $id)
+    {
+        $user = auth()->user();
+
+        // Only HOD Sanitation can assign inspectors
+        if (!$user->isHODSanitation()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $requestModel = RequestModel::where('id', $id)
+            ->whereIn('serve_type', ['New Connection', 'Sewerage Problem'])
+            ->first();
+
+        if (!$requestModel) {
+            return response()->json(['message' => 'Request not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'inspector_id' => 'required|exists:users,id',
+        ]);
+
+        $inspector = User::find($validated['inspector_id']);
+
+        if (!$inspector || !$inspector->isInspector()) {
+            return response()->json(['message' => 'Invalid inspector'], 422);
+        }
+
+        $requestModel->update([
+            'assigned_inspector_id' => $inspector->id,
+            'assigned_staff'        => $inspector->name,
+            'status'                => 'In Progress',
+        ]);
+
+        return response()->json($requestModel->fresh());
     }
 
     /**

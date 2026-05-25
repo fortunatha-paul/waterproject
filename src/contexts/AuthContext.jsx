@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
@@ -11,28 +11,35 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const SESSION_TIMEOUT = 2 * 60 * 1000; // 2 minutes in milliseconds
+// Helper function to initialize user from localStorage
+const initializeUserFromStorage = () => {
+  const token = localStorage.getItem('auth_token');
+  const userData = localStorage.getItem('user_data');
 
-  useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    const userData = localStorage.getItem('user_data');
-
-    if (token && userData) {
-      try {
-        const parsedUserData = JSON.parse(userData);
-        setUser(parsedUserData);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('user_data');
-        localStorage.removeItem('auth_token');
-      }
+  if (token && userData) {
+    try {
+      return JSON.parse(userData);
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      localStorage.removeItem('user_data');
+      localStorage.removeItem('auth_token');
     }
-    setLoading(false);
-  }, []);
+  }
+  return null;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(initializeUserFromStorage);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const SESSION_TIMEOUT = useMemo(() => 2 * 60 * 1000, []); // 2 minutes in milliseconds
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    setUser(null);
+    navigate('/login');
+  }, [navigate]);
 
   // Session timeout logic
   useEffect(() => {
@@ -68,7 +75,33 @@ export const AuthProvider = ({ children }) => {
       });
       clearInterval(timeoutId);
     };
-  }, [user]);
+  }, [user, SESSION_TIMEOUT, logout]);
+
+  const redirectToDashboard = useCallback((role) => {
+    switch (role?.toLowerCase()) {
+      case 'customer_service':
+      case 'customer service':
+      case 'support':
+        navigate('/dashboard/customer-service');
+        break;
+      case 'inspector':
+        navigate('/dashboard/inspector');
+        break;
+      case 'finance':
+        navigate('/dashboard/finance');
+        break;
+      case 'hod_sanitation':
+      case 'hod sanitation':
+        navigate('/dashboard/hod-sanitation');
+        break;
+      case 'user':
+      case 'customer':
+        navigate('/dashboard/user');
+        break;
+      default:
+        navigate('/dashboard/user');
+    }
+  }, [navigate]);
 
   const login = async (credentials) => {
     try {
@@ -103,35 +136,6 @@ export const AuthProvider = ({ children }) => {
       console.error('Login error:', error);
       return { success: false, error: error.message };
     }
-  };
-
-  const redirectToDashboard = (role) => {
-    switch (role?.toLowerCase()) {
-      case 'customer_service':
-      case 'customer service':
-      case 'support':
-        navigate('/dashboard/customer-service');
-        break;
-      case 'inspector':
-        navigate('/dashboard/inspector');
-        break;
-      case 'finance':
-        navigate('/dashboard/finance');
-        break;
-      case 'user':
-      case 'customer':
-        navigate('/dashboard/user');
-        break;
-      default:
-        navigate('/dashboard/finance');
-    }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
-    setUser(null);
-    navigate('/login');
   };
 
   const value = {

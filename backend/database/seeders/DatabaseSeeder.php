@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             RequestSeeder::class,
             FinanceSeeder::class,
+            HODSanitationSeeder::class,
         ]);
     }
 }
