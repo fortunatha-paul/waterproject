@@ -31,9 +31,9 @@ class RequestController extends Controller
                 ->where('serve_type', 'Billing Issue')
                 ->get();
         } elseif ($user->isHODSanitation()) {
-            // For HOD Sanitation, show new connection and sewerage problem requests
+            // For HOD Sanitation, show new connection and remove sewage water requests
             $requests = RequestModel::with('user')
-                ->whereIn('serve_type', ['New Connection', 'Sewerage Problem'])
+                ->whereIn('serve_type', ['New Connection', 'Remove Sewage Water'])
                 ->get();
         } else {
             // For customers, show only their own requests
@@ -85,10 +85,10 @@ class RequestController extends Controller
                 ->where('serve_type', 'Billing Issue')
                 ->first();
         } elseif ($user->isHODSanitation()) {
-            // For HOD Sanitation, show new connection and sewerage problem requests
+            // For HOD Sanitation, show new connection and remove sewage water requests
             $request = RequestModel::with('user')
                 ->where('id', $id)
-                ->whereIn('serve_type', ['New Connection', 'Sewerage Problem'])
+                ->whereIn('serve_type', ['New Connection', 'Remove Sewage Water'])
                 ->first();
         } else {
             // For customers, show only their own requests
@@ -122,9 +122,9 @@ class RequestController extends Controller
                 ->where('serve_type', 'Billing Issue')
                 ->first();
         } elseif ($user->isHODSanitation()) {
-            // For HOD Sanitation, check if request is new connection or sewerage problem
+            // For HOD Sanitation, check if request is new connection or remove sewage water
             $requestModel = RequestModel::where('id', $id)
-                ->whereIn('serve_type', ['New Connection', 'Sewerage Problem'])
+                ->whereIn('serve_type', ['New Connection', 'Remove Sewage Water'])
                 ->first();
         } else {
             $requestModel = RequestModel::where('id', $id)->where('user_id', $user->id)->first();
@@ -171,7 +171,7 @@ class RequestController extends Controller
         }
 
         $requestModel = RequestModel::where('id', $id)
-            ->whereIn('serve_type', ['New Connection', 'Sewerage Problem'])
+            ->whereIn('serve_type', ['New Connection', 'Remove Sewage Water'])
             ->first();
 
         if (!$requestModel) {

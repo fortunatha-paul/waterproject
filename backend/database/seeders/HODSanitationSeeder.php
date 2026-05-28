@@ -49,21 +49,7 @@ class HODSanitationSeeder extends Seeder
                 ]
             );
 
-            // Create sample "Sewerage Problem" request
-            Request::firstOrCreate(
-                [
-                    'user_id' => $jane->id,
-                    'serve_type' => 'Sewerage Problem',
-                    'description' => 'Blocked sewerage line causing backup. Immediate attention required.',
-                    'location' => 'House 456, Ubungo',
-                ],
-                [
-                    'status' => 'Pending',
-                    'priority' => 'High',
-                ]
-            );
-
-            // Create additional "New Connection" request
+            // Create sample "New Connection" requests for HOD Sanitation
             Request::firstOrCreate(
                 [
                     'user_id' => $jane->id,
@@ -73,20 +59,6 @@ class HODSanitationSeeder extends Seeder
                 ],
                 [
                     'status' => 'In Progress',
-                    'priority' => 'Medium',
-                ]
-            );
-
-            // Create additional "Sewerage Problem" request
-            Request::firstOrCreate(
-                [
-                    'user_id' => $john->id,
-                    'serve_type' => 'Sewerage Problem',
-                    'description' => 'Foul smell and drainage issues in residential area.',
-                    'location' => 'House 789, Chalinze',
-                ],
-                [
-                    'status' => 'Pending',
                     'priority' => 'Medium',
                 ]
             );
