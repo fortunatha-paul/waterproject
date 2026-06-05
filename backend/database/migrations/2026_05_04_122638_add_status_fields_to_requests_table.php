@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('requests', function (Blueprint $table) {
-            $table->string('status')->default('Pending')->after('location');
+            $table->string('status')->default('Submitted')->after('location');
             $table->string('priority')->default('Medium')->after('status');
             $table->string('assigned_staff')->nullable()->after('priority');
             $table->date('deadline')->nullable()->after('assigned_staff');

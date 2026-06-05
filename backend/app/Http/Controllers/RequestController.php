@@ -18,7 +18,7 @@ class RequestController extends Controller
         // If user is customer service, show only customer service related requests
         if ($user->isCustomerService()) {
             $requests = RequestModel::with('user')
-                ->whereIn('serve_type', ['Meter Repair', 'Meter Replacement', 'No Water Supply'])
+                ->whereIn('serve_type', ['Repair', 'Meter Replacement', 'Complaint','No Water Supply', 'Other'])
                 ->get();
         } elseif ($user->isInspector()) {
             // For inspectors, show requests assigned to them
@@ -54,7 +54,22 @@ class RequestController extends Controller
             'location' => 'required|string|max:255',
         ]);
 
+        // Default initial status for new requests
         $validated['user_id'] = auth()->id();
+        $validated['status'] = 'Submitted';
+        $validated['inspectorStatus'] = $validated['inspectorStatus'] ?? 'Not Solved';
+        // Ensure no accidental assignment on create
+        $validated['assigned_staff'] = null;
+        $validated['assigned_inspector_id'] = null;
+        // Initialize timeline with submitted event
+        $validated['timeline'] = [
+            [
+                'date' => now()->toDateString(),
+                'event' => 'Request Submitted',
+                'by' => auth()->user()->name ?? 'Customer',
+            ]
+        ];
+
         $newRequest = RequestModel::create($validated);
         return response()->json($newRequest, 201);
     }
@@ -70,7 +85,7 @@ class RequestController extends Controller
         if ($user->isCustomerService()) {
             $request = RequestModel::with('user')
                 ->where('id', $id)
-                ->whereIn('serve_type', ['Meter Repair', 'Meter Replacement', 'No Water Supply'])
+                ->whereIn('serve_type', ['Repair', 'Meter Replacement', 'Complaint', 'Other'])
                 ->first();
         } elseif ($user->isInspector()) {
             // For inspectors, show requests assigned to them
@@ -98,6 +113,25 @@ class RequestController extends Controller
         if (!$request) {
             return response()->json(['message' => 'Request not found'], 404);
         }
+
+        // When HOD or Customer Service views a freshly submitted request, mark it as Reviewed
+        if (($user->isCustomerService() || $user->isHODSanitation()) && $request->status === 'Submitted') {
+            $request->status = 'Reviewed';
+            $timeline = is_array($request->timeline) ? $request->timeline : (json_decode($request->timeline, true) ?: []);
+            $timeline[] = [
+                'date' => now()->toDateString(),
+                'event' => 'Request Reviewed',
+                'by' => $user->name,
+            ];
+            $request->timeline = $timeline;
+            $request->save();
+        }
+        if (($user->isHODSanitation() || $user->isCustomerService() || $user->isFinance())
+    && $request && $request->status === 'Submitted') {
+    $request->update(['status' => 'Reviewed']);
+    $request = $request->fresh();
+}
+
         return response()->json($request);
     }
 
@@ -108,9 +142,11 @@ class RequestController extends Controller
     {
         $user = auth()->user();
 
-        // Find request - customer service can update any request, inspectors can update assigned requests, finance can update billing requests, HOD Sanitation can update sanitation requests, others only their own
+        // Find request - customer service can update customer service requests, inspectors can update assigned requests, finance can update billing requests, HOD Sanitation can update sanitation requests, others only their own
         if ($user->isCustomerService()) {
-            $requestModel = RequestModel::where('id', $id)->first();
+            $requestModel = RequestModel::where('id', $id)
+                ->whereIn('serve_type', ['Repair', 'Meter Replacement', 'Complaint', 'No Water Supply','Other'])
+                ->first();
         } elseif ($user->isInspector()) {
             // For inspectors, check if request is assigned to them
             $requestModel = RequestModel::where('id', $id)
@@ -138,8 +174,8 @@ class RequestController extends Controller
             'serve_type' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'location' => 'sometimes|string|max:255',
-            'status' => 'sometimes|string|in:Pending,In Progress,Rejected,Resolved',
-            'inspectorStatus' => 'sometimes|string|in:Solved,Not Solved',
+            'status' => 'sometimes|string|in:Submitted,Reviewed,Assigned,In Progress,Rejected,Resolved,Completed,Pending',
+            'inspectorStatus' => 'sometimes|string|in:Solved,Not Solved,Ongoing',
             'priority' => 'sometimes|string|in:Low,Medium,High,Urgent',
             'assigned_staff' => 'sometimes|nullable|string|max:255',
             'deadline' => 'sometimes|nullable|date',
@@ -149,9 +185,22 @@ class RequestController extends Controller
             'payment_status' => 'sometimes|string|in:Unpaid,Pending,Paid,Overdue',
         ]);
 
-        // Auto-update status to 'Completed' when inspectorStatus is set to 'Solved'
-        if (isset($validated['inspectorStatus']) && $validated['inspectorStatus'] === 'Solved') {
-            $validated['status'] = 'Completed';
+        // Map inspectorStatus to request status
+        if (isset($validated['inspectorStatus'])) {
+            if ($validated['inspectorStatus'] === 'Solved') {
+                $validated['status'] = 'Completed';
+            } elseif ($validated['inspectorStatus'] === 'Ongoing') {
+                $validated['status'] = 'In Progress';
+            }
+        }
+
+        // Prevent setting status to 'Assigned' unless an inspector is actually assigned
+        if (isset($validated['status']) && $validated['status'] === 'Assigned') {
+            $hasAssignment = (!empty($validated['assigned_staff']) || !empty($validated['assigned_inspector_id']));
+            if (!$hasAssignment) {
+                // Remove status change so it won't be set to Assigned without assignment
+                unset($validated['status']);
+            }
         }
 
         $requestModel->update($validated);
@@ -191,7 +240,8 @@ class RequestController extends Controller
         $requestModel->update([
             'assigned_inspector_id' => $inspector->id,
             'assigned_staff'        => $inspector->name,
-            'status'                => 'In Progress',
+            // When assigning, mark request as 'Assigned' so inspector can later start (Ongoing)
+            'status'                => 'Assigned',
         ]);
 
         return response()->json($requestModel->fresh());

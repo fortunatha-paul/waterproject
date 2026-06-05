@@ -23,6 +23,17 @@ class Request extends Model
         'payment_status',
     ];
 
+    protected $attributes = [
+        'status' => 'Submitted',
+        'inspectorStatus' => 'Not Solved',
+        'priority' => 'Medium',
+    ];
+
+    protected $casts = [
+        'comments' => 'array',
+        'timeline' => 'array',
+    ];
+
     /**
      * Get the user that owns the request.
      */
