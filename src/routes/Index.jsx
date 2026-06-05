@@ -1,15 +1,16 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import Login from '../pages/Auth/Login/login';
 import Register from '../pages/Auth/Register/register';
-import UserDashboard from '../pages/Dashboard/User/Userdashboard';
+import UserDashboard from '../pages/dashboard/User/Userdashboard';
 import { AuthProvider } from '../contexts/AuthContext';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 // Dashboard imports (update these paths based on your actual dashboard structure)
-import CustomerDashboard from '../pages/Dashboard/Custome Service/Customerservicedashboard';
-import InspectorDashboard from '../pages/Dashboard/inspector/InspectorDashboard';
-import Finance from '../pages/Dashboard/finance/Finance';
-import HODSanitation from '../pages/Dashboard/water and sanitation/HODSanitation';
+import CustomerDashboard from '../pages/dashboard/Custome Service/Customerservicedashboard';
+import InspectorDashboard from '../pages/dashboard/inspector/InspectorDashboard';
+import Finance from '../pages/dashboard/finance/Finance';
+import HODSanitation from '../pages/dashboard/water and sanitation/HODSanitation';
+import HodDashboard from '../pages/dashboard/hod/HodDashboard';
 
 const AuthLayout = () => (
   <AuthProvider>
@@ -70,6 +71,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredRole="finance">
             <Finance />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/dashboard/hod',
+        element: (
+          <ProtectedRoute requiredRole="hod_sanitation">
+            <HodDashboard />
           </ProtectedRoute>
         ),
       },

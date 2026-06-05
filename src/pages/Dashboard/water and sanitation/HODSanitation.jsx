@@ -1,3 +1,5 @@
+
+//import ReportsViewer from '../../components/ReportsViewer';
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
 
@@ -125,7 +127,7 @@ function InspectorTag({ inspectorName }) {
 function ServiceTypeTag({ serviceType }) {
   const typeConfig = {
     "New Connection": { color: "#3B82F6", bg: "#DBEAFE" },
-    "Sewerage Problem": { color: "#8B5CF6", bg: "#EDE9FE" },
+    "Remove Sewage Water": { color: "#EF4444", bg: "#FEE2E2" },
     "Meter Repair": { color: "#06B6D4", bg: "#CFFAFE" },
     "Meter Replacement": { color: "#10B981", bg: "#D1FAE5" },
     "No Water Supply": { color: "#F97316", bg: "#FFEDD5" },
@@ -544,6 +546,8 @@ function HODSanitation() {
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [filterType, setFilterType] = useState("All");
+  //badiliko
+  //const [activeTab, setActiveTab] = useState('requests');
   const [filterStatus, setFilterStatus] = useState("All");
 
   const fetchRequests = async () => {
@@ -680,13 +684,8 @@ function HODSanitation() {
 
   const stats = {
     total: requests.length,
-    newConnections: requests.filter((r) => r.serve_type === "New Connection")
-      .length,
-    sewerageProblems: requests.filter(
-      (r) => r.serve_type === "Sewerage Problem",
-    ).length,
-    pending: requests.filter((r) => r.status === "Pending").length,
-    inProgress: requests.filter((r) => r.status === "In Progress").length,
+    newConnections: requests.filter((r) => r.serve_type === "New Connection").length,
+
     completed: requests.filter((r) => r.status === "Completed").length,
   };
 
@@ -774,9 +773,9 @@ function HODSanitation() {
           color="#3B82F6"
         />
         <SummaryCard
-          label="Sewerage Issues"
-          value={stats.sewerageProblems}
-          color="#8B5CF6"
+          label="Remove Sewage Water"
+          value={stats.removeSewageRequests}
+          color="#EF4444"
         />
         <SummaryCard label="Pending" value={stats.pending} color="#F59E0B" />
         <SummaryCard
@@ -832,7 +831,7 @@ function HODSanitation() {
           >
             <option value="All">All Types</option>
             <option value="New Connection">New Connection</option>
-            <option value="Sewerage Problem">Sewerage Problem</option>
+            <option value="Remove Sewage Water">Remove Sewage Water</option>
           </select>
         </div>
         <div>

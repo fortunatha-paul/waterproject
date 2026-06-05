@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { api } from '../../../utils/api';
-import KpiCards from './components/KpiCards';
-import RequestsTable from './components/RequestsTable';
-import RequestDetails from './components/RequestDetails';
-import AssignTaskModal from './components/AssignTaskModal';
+import KpiCards from '../Custome Service/components/KpiCards';
+import RequestsTable from '../Custome Service/components/RequestsTable';
+import RequestDetails from '../Custome Service/components/RequestDetails';
+import AssignTaskModal from '../Custome Service/components/AssignTaskModal';
 import DashboardStateManager from '../../../utils/dashboardState';
 
-const CustomerServiceDashboard = () => {
+const HodDashboard = () => {
     const { user, logout } = useAuth();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -15,7 +15,7 @@ const CustomerServiceDashboard = () => {
     const [assignModalRequest, setAssignModalRequest] = useState(null);
 
     // Initialize dashboard state manager
-    const [stateManager] = useState(() => new DashboardStateManager('customer-service'));
+    const [stateManager] = useState(() => new DashboardStateManager('hod'));
 
     useEffect(() => {
         // Restore saved state if exists
@@ -69,7 +69,7 @@ const CustomerServiceDashboard = () => {
 
     const stats = {
         total: requests.length,
-        pending: requests.filter((r) => r.status === 'Pending' || r.status === 'Submitted').length,
+        pending: requests.filter((r) => r.status === 'Pending').length,
         inProgress: requests.filter((r) => r.status === 'In Progress').length,
         completed: requests.filter((r) => r.status === 'Completed').length,
         urgent: requests.filter((r) => r.priority === 'Urgent' || r.priority === 'High').length,
@@ -160,7 +160,7 @@ const CustomerServiceDashboard = () => {
                     </div>
                     <div>
                         <div style={{ fontSize: 17, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em' }}>
-                            Customer Service Portal
+                            HOD Portal
                         </div>
                         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
                             {user?.name || 'Staff'} — Water Service Management
@@ -174,7 +174,7 @@ const CustomerServiceDashboard = () => {
                         borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)',
                     }}>
                         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>Role</div>
-                        <div style={{ fontSize: 13, color: '#93C5FD', fontWeight: 600 }}>Customer Service</div>
+                        <div style={{ fontSize: 13, color: '#93C5FD', fontWeight: 600 }}>Head of Department</div>
                     </div>
                     <button
                         onClick={logout}
@@ -198,7 +198,7 @@ const CustomerServiceDashboard = () => {
                         Service Dashboard
                     </h1>
                     <p style={{ fontSize: 14, color: '#6b7280', margin: '4px 0 0' }}>
-                        Manage and track all customer service requests
+                        Manage and track all sanitation and new connection requests
                     </p>
                 </div>
 
@@ -213,7 +213,7 @@ const CustomerServiceDashboard = () => {
                     onAssign={handleAssign}
                     onUpdate={handleUpdate}
                     statusOptions={['All', 'Submitted', 'Reviewed', 'Assigned', 'In Progress', 'Completed']}
-                    serviceTypeOptions={['All', 'New Connection', 'Repair', 'Complaint', 'Meter Replacement', 'Remove Sewage Water', 'No Water Supply', 'Other']}
+                    serviceTypeOptions={['All', 'New Connection', 'Remove Sewage Water']}
                 />
             </div>
 
@@ -229,4 +229,4 @@ const CustomerServiceDashboard = () => {
     );
 };
 
-export default CustomerServiceDashboard;
+export default HodDashboard;

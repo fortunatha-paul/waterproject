@@ -92,7 +92,8 @@ export const AuthProvider = ({ children }) => {
         break;
       case 'hod_sanitation':
       case 'hod sanitation':
-        navigate('/dashboard/hod-sanitation');
+      case 'hod':
+        navigate('/dashboard/hod');
         break;
       case 'user':
       case 'customer':

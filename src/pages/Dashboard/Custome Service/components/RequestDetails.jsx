@@ -1,17 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../../../../utils/api';
 import StatusBadge from './StatusBadge';
 import AssignTaskModal from './AssignTaskModal';
+import axios from 'axios';
 
-export default function RequestDetails({ request, onBack, onAssign, onStatusChange }) {
+export default function RequestDetails({ request, onBack, onAssign, onStatusChange, onRequestUpdated }) {
   const [newComment, setNewComment] = useState('');
+  const [fresh, setFresh] = useState(request);
+  const [inspectorReport, setInspectorReport] = useState(null);
+  const [loadingReport, setLoadingReport] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchFresh = async () => {
+      try {
+        const reqId = request.id && request.id.toString().includes('REQ-') ? request.id.replace('REQ-', '') : request.id;
+        const data = await api.getRequest(reqId);
+        if (mounted && data) {
+          if (data.status === 'Submitted') {
+            const updated = await api.updateRequest(reqId, { status: 'Reviewed' });
+            setFresh(updated);
+            if (onRequestUpdated) {
+              onRequestUpdated(updated);
+            }
+          } else {
+            setFresh(data);
+          }
+        }
+      } catch (err) {
+        // fallback to passed request on error
+        console.warn('Failed to fetch fresh request details', err);
+        if (mounted) setFresh(request);
+      }
+    };
+    fetchFresh();
+    return () => { mounted = false; };
+  }, [request, onRequestUpdated]);
+
+  useEffect(() => {
+    const fetchInspectorReport = async () => {
+      if (!fresh?.id) return;
+      try {
+        setLoadingReport(true);
+        const reports = await api.getInspectorReports();
+        const report = reports.find(r => r.request_id === fresh.id);
+        if (report) {
+          setInspectorReport(report);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch inspector report:', err);
+      } finally {
+        setLoadingReport(false);
+      }
+    };
+    fetchInspectorReport();
+  }, [fresh?.id]);
   const [showAssignModal, setShowAssignModal] = useState(false);
 
-  if (!request) return null;
+  const shownRequest = fresh || request;
+  if (!shownRequest) return null;
 
-  const timeline = Array.isArray(request.timeline) ? request.timeline : [
-    { date: request.date, event: 'Request Submitted', by: request.customerName },
-    ...(request.assignedStaff ? [{ date: request.date, event: 'Assigned to ' + request.assignedStaff, by: 'System' }] : []),
-    ...(request.status === 'Completed' ? [{ date: request.completedDate || '—', event: 'Request Completed', by: request.assignedStaff || 'System' }] : []),
+  const timeline = Array.isArray(shownRequest.timeline) ? shownRequest.timeline : [
+    { date: shownRequest.date || shownRequest.created_at || new Date().toISOString().split('T')[0], event: 'Request Submitted', by: shownRequest.customerName || (shownRequest.user && shownRequest.user.name) || 'Customer' },
+    ...(shownRequest.assignedStaff ? [{ date: shownRequest.date || shownRequest.created_at, event: 'Assigned to ' + shownRequest.assignedStaff, by: 'System' }] : []),
+    ...(shownRequest.status === 'Completed' ? [{ date: shownRequest.completedDate || '—', event: 'Request Completed', by: shownRequest.assignedStaff || 'System' }] : []),
   ];
 
   const handleAddComment = () => {
@@ -55,7 +107,7 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
               {request.id} — {request.serviceType}
             </div>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-              <StatusBadge type="status" value={request.status} />
+              <StatusBadge type="status" value={shownRequest.status} />
               <StatusBadge type="priority" value={request.priority} />
               <span style={{ fontSize: 13, color: '#6b7280' }}>Submitted: {request.date}</span>
             </div>
@@ -119,7 +171,7 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {/* Assigned Inspector */}
             <Section title="Assigned Inspector">
-              {request.assignedStaff ? (
+              {shownRequest.assignedStaff ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
                     width: 40, height: 40, borderRadius: '50%', background: '#DBEAFE',
@@ -129,15 +181,60 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
                     {request.assignedStaff[0]}
                   </div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#1f2937' }}>{request.assignedStaff}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#1f2937' }}>{shownRequest.assignedStaff}</div>
                     <div style={{ fontSize: 12, color: '#6b7280' }}>Inspector</div>
                   </div>
                 </div>
               ) : (
                 <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 500 }}>No inspector assigned yet</span>
               )}
-              {request.deadline && (
-                <InfoRow label="Deadline" value={request.deadline} />
+              {shownRequest.deadline && (
+                  <InfoRow label="Deadline" value={shownRequest.deadline} />
+                )}
+            </Section>
+
+            {/* Inspector Report */}
+            <Section title="Inspector Report">
+              {loadingReport ? (
+                <div style={{ fontSize: 13, color: '#9CA3AF' }}>Loading report...</div>
+              ) : inspectorReport ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <InfoRow label="Title" value={inspectorReport.title} />
+                  <InfoRow label="Inspector" value={inspectorReport.inspector?.name || 'Unknown'} />
+                  <InfoRow label="Visit Date" value={inspectorReport.visit_date} />
+                  <InfoRow label="Status" value={inspectorReport.status} />
+                  <InfoRow label="Water Supply" value={inspectorReport.water_supply_status} />
+                  <InfoRow label="Pipe Condition" value={inspectorReport.pipe_condition} />
+                  {inspectorReport.sewage_issue && (
+                    <>
+                      <InfoRow label="Sewage Issue" value="Yes" />
+                      {inspectorReport.sewage_details && (
+                        <div style={{ padding: '10px', background: '#FEF3C7', borderRadius: 6, borderLeft: '3px solid #F59E0B' }}>
+                          <div style={{ fontSize: 12, color: '#92400E', lineHeight: 1.5 }}>
+                            <strong>Details:</strong> {inspectorReport.sewage_details}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  <div style={{ padding: '12px', background: '#F0F9FF', borderRadius: 8, borderLeft: '3px solid #3B82F6' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#1E40AF', marginBottom: 4 }}>Findings</div>
+                    <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{inspectorReport.findings}</div>
+                  </div>
+                  <div style={{ padding: '12px', background: '#F0F9FF', borderRadius: 8, borderLeft: '3px solid #3B82F6' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#1E40AF', marginBottom: 4 }}>Work Done</div>
+                    <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{inspectorReport.work_done}</div>
+                  </div>
+                  <div style={{ padding: '12px', background: '#F0F9FF', borderRadius: 8, borderLeft: '3px solid #3B82F6' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#1E40AF', marginBottom: 4 }}>Recommendations</div>
+                    <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{inspectorReport.recommendations}</div>
+                  </div>
+                  {inspectorReport.estimated_cost && (
+                    <InfoRow label="Estimated Cost" value={`TSH ${inspectorReport.estimated_cost}`} />
+                  )}
+                </div>
+              ) : (
+                <span style={{ fontSize: 13, color: '#9CA3AF' }}>No inspector report submitted yet</span>
               )}
             </Section>
 

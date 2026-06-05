@@ -2,6 +2,9 @@ import React from 'react';
 
 const statusStyles = {
   Pending: { bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' },
+  Submitted: { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' },
+  Reviewed: { bg: '#FFFBEB', color: '#92400E', border: '#FDE68A' },
+  Assigned: { bg: '#EDE9FE', color: '#7C3AED', border: '#E9D5FF' },
   'In Progress': { bg: '#DBEAFE', color: '#1E40AF', border: '#BFDBFE' },
   Completed: { bg: '#D1FAE5', color: '#065F46', border: '#A7F3D0' },
   Rejected: { bg: '#FEE2E2', color: '#991B1B', border: '#FECACA' },

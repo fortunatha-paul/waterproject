@@ -17,7 +17,7 @@ const INSPECTORS = [
 ];
 
 const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
-const STATUSES = ['Pending', 'In Progress', 'Rejected', 'Resolved'];
+const STATUSES = ['Submitted', 'Assigned', 'Pending', 'In Progress', 'Completed', 'Rejected', 'Resolved'];
 
 export default function AssignTaskModal({ request, onClose, onSave }) {
   const [assignedStaff, setAssignedStaff] = useState(request.assignedStaff || '');

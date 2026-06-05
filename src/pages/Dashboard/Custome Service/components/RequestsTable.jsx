@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import StatusBadge from './StatusBadge';
 
-const FILTER_FIELDS = [
-  { key: 'status', label: 'Status', options: ['All', 'Pending', 'In Progress', 'Completed', 'Rejected'] },
-  { key: 'serviceType', label: 'Service Type', options: ['All', 'Meter Repair', 'Meter Replacement', 'No Water Supply'] },
-  { key: 'location', label: 'Location', options: ['All', 'Block B, Sector 14', 'House 45, Lane 7', 'Flat 302, Tower A', 'Shop 12, Market Road', 'House 78, Sector 22', 'Block C, Sector 9'] },
-];
+const DEFAULT_STATUS_OPTIONS = ['All', 'Submitted', 'Reviewed', 'Assigned', 'Pending', 'In Progress', 'Completed', 'Rejected', 'Resolved'];
+const DEFAULT_SERVICE_TYPE_OPTIONS = ['All', 'New Connection', 'Repair', 'Complaint', 'Billing Issue', 'Meter Replacement', 'Remove Sewage Water', 'No Water Supply', 'Other'];
 
-export default function RequestsTable({ requests, onView, onAssign, onUpdate }) {
-  const [filters, setFilters] = useState({ status: 'All', serviceType: 'All', location: 'All', dateFrom: '', dateTo: '', search: '' });
+export default function RequestsTable({ requests, onView, onAssign, onUpdate, statusOptions, serviceTypeOptions }) {
+  const FILTER_FIELDS = [
+    { key: 'status', label: 'Status', options: statusOptions || DEFAULT_STATUS_OPTIONS },
+    { key: 'serviceType', label: 'Service Type', options: serviceTypeOptions || DEFAULT_SERVICE_TYPE_OPTIONS },
+  ];
+  const [filters, setFilters] = useState({ status: 'All', serviceType: 'All', dateFrom: '', dateTo: '', search: '' });
   const [sortField, setSortField] = useState('date');
   const [sortDir, setSortDir] = useState('desc');
 
@@ -20,7 +21,6 @@ export default function RequestsTable({ requests, onView, onAssign, onUpdate }) 
     .filter((r) => {
       if (filters.status !== 'All' && r.status !== filters.status) return false;
       if (filters.serviceType !== 'All' && r.serviceType !== filters.serviceType) return false;
-      if (filters.location !== 'All' && r.location !== filters.location) return false;
       if (filters.dateFrom && r.date < filters.dateFrom) return false;
       if (filters.dateTo && r.date > filters.dateTo) return false;
       if (filters.search) {
@@ -28,7 +28,6 @@ export default function RequestsTable({ requests, onView, onAssign, onUpdate }) 
         return (
           r.id.toLowerCase().includes(q) ||
           r.customerName.toLowerCase().includes(q) ||
-          r.location.toLowerCase().includes(q) ||
           r.serviceType.toLowerCase().includes(q)
         );
       }
@@ -96,7 +95,7 @@ export default function RequestsTable({ requests, onView, onAssign, onUpdate }) 
           />
         </div>
         <button
-          onClick={() => setFilters({ status: 'All', serviceType: 'All', location: 'All', dateFrom: '', dateTo: '', search: '' })}
+          onClick={() => setFilters({ status: 'All', serviceType: 'All', dateFrom: '', dateTo: '', search: '' })}
           style={{
             padding: '8px 14px', borderRadius: 8, border: '1px solid #d1d5db',
             background: '#F9FAFB', fontSize: 13, cursor: 'pointer', color: '#6b7280',

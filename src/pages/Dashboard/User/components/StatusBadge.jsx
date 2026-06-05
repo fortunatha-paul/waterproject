@@ -1,7 +1,10 @@
 import React from 'react';
 
 const STATUS_COLORS = {
+  Submitted: { bg: '#EFF6FF', text: '#1D4ED8', dot: '#3B82F6' },
+  Reviewed: { bg: '#FFFBEB', text: '#92400E', dot: '#F59E0B' },
   Pending: { bg: '#FEF3C7', text: '#92400E', dot: '#F59E0B' },
+  Assigned: { bg: '#EDE9FE', text: '#7C3AED', dot: '#8B5CF6' },
   'In Progress': { bg: '#DBEAFE', text: '#1E40AF', dot: '#3B82F6' },
   Completed: { bg: '#D1FAE5', text: '#065F46', dot: '#10B981' },
   Rejected: { bg: '#FEE2E2', text: '#991B1B', dot: '#EF4444' },

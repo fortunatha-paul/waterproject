@@ -44,7 +44,8 @@ export default function UserDashboard() {
         location: req.location,
         technician: req.assigned_staff,
         expectedCompletion: req.deadline,
-        stage: req.status === 'Completed' ? 4 : req.status === 'In Progress' ? 3 : req.status === 'Pending' ? 2 : 1,
+        //stage: req.status === 'Completed' ? 4 : req.status === 'In Progress' ? 3 : (req.status === 'Pending' || req.status === 'Submitted') ? 2 : 1,
+        stage: req.status === 'Completed' ? 4 : req.status === 'In Progress' ? 3 : req.status === 'Assigned' ? 2 : req.status === 'Reviewed' ? 1 : 0,
         priority: req.priority || 'Medium',
         comments: Array.isArray(req.comments) ? req.comments : [],
         timeline: Array.isArray(req.timeline) ? req.timeline : [],
@@ -97,7 +98,7 @@ export default function UserDashboard() {
   }, [stateManager]);
 
   const total = requests.length;
-  const pending = requests.filter((r) => r.status === 'Pending').length;
+  const pending = requests.filter((r) => r.status === 'Pending' || r.status === 'Submitted').length;
   const inProgress = requests.filter((r) => r.status === 'In Progress').length;
   const completed = requests.filter((r) => r.status === 'Completed').length;
 
@@ -335,7 +336,7 @@ export default function UserDashboard() {
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
               <thead>
                 <tr style={{ background: '#F9FAFB' }}>
-                  {['Request ID', 'Service Type', 'Date Submitted', 'Status', 'Inspector Status', 'Action'].map((h) => (
+                  {['Request ID', 'Service Type', 'Date Submitted', 'Status', 'Action'].map((h) => (
                     <th key={h} style={{
                       padding: '12px 20px', textAlign: 'left', fontSize: 12,
                       fontWeight: 600, color: '#6b7280', textTransform: 'uppercase',
