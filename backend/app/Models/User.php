@@ -101,4 +101,8 @@ class User extends Authenticatable
     {
         return $this->role === 'hod_sanitation';
     }
+    public function isMD()
+{
+    return $this->role === 'md';
+}
 }

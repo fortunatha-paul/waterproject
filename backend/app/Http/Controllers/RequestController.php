@@ -14,6 +14,9 @@ class RequestController extends Controller
     public function index()
     {
         $user = auth()->user();
+        if ($user->isMD()) {
+    return response()->json(RequestModel::with('user')->get());
+}
 
         // If user is customer service, show only customer service related requests
         if ($user->isCustomerService()) {
