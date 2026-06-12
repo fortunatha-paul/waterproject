@@ -2,6 +2,7 @@
 //import ReportsViewer from '../../components/ReportsViewer';
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
+import DepartmentReportsView from '../components/DepartmentReportsView';
 
 const API_URL = "http://localhost:8000/api";
 

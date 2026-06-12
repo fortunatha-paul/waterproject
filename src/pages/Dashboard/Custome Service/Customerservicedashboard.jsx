@@ -5,6 +5,7 @@ import KpiCards from './components/KpiCards';
 import RequestsTable from './components/RequestsTable';
 import RequestDetails from './components/RequestDetails';
 import AssignTaskModal from './components/AssignTaskModal';
+import DepartmentReportsView from '../components/DepartmentReportsView';
 import DashboardStateManager from '../../../utils/dashboardState';
 
 const CustomerServiceDashboard = () => {
@@ -214,6 +215,12 @@ const CustomerServiceDashboard = () => {
                     onUpdate={handleUpdate}
                     statusOptions={['All', 'Submitted', 'Reviewed', 'Assigned', 'In Progress', 'Completed']}
                     serviceTypeOptions={['All', 'New Connection', 'Repair', 'Complaint', 'Meter Replacement', 'Remove Sewage Water', 'No Water Supply', 'Other']}
+                />
+
+                {/* Inspector Reports Section */}
+                <DepartmentReportsView 
+                    serveTypes={['Repair', 'Meter Replacement', 'Complaint', 'No Water Supply', 'Other']}
+                    departmentName="Customer Service"
                 />
             </div>
 

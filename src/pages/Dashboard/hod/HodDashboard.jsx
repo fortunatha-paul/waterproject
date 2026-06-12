@@ -6,6 +6,7 @@ import RequestsTable from '../Custome Service/components/RequestsTable';
 import RequestDetails from '../Custome Service/components/RequestDetails';
 import AssignTaskModal from '../Custome Service/components/AssignTaskModal';
 import DashboardStateManager from '../../../utils/dashboardState';
+import DepartmentReportsView from '../components/DepartmentReportsView';  //new 1 badiliko
 
 const HodDashboard = () => {
     const { user, logout } = useAuth();
@@ -216,6 +217,13 @@ const HodDashboard = () => {
                     serviceTypeOptions={['All', 'New Connection', 'Remove Sewage Water']}
                 />
             </div>
+
+
+            {/* Inspector Reports Section */}
+<DepartmentReportsView 
+    serveTypes={['New Connection', 'Remove Sewage Water']}
+    departmentName="HOD Sanitation"
+/>
 
             {/* Assign Task Modal */}
             {assignModalRequest && (

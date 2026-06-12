@@ -11,6 +11,7 @@ import InspectorDashboard from '../pages/dashboard/inspector/InspectorDashboard'
 import Finance from '../pages/dashboard/finance/Finance';
 import HODSanitation from '../pages/dashboard/water and sanitation/HODSanitation';
 import HodDashboard from '../pages/dashboard/hod/HodDashboard';
+import MDDashboard from '../pages/dashboard/md/MDDashboard';
 
 const AuthLayout = () => (
   <AuthProvider>
@@ -87,6 +88,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredRole="hod_sanitation">
             <HODSanitation />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/dashboard/md',
+        element: (
+          <ProtectedRoute requiredRole="md">
+            <MDDashboard />
           </ProtectedRoute>
         ),
       },

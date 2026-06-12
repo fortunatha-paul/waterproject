@@ -99,6 +99,9 @@ export const AuthProvider = ({ children }) => {
       case 'customer':
         navigate('/dashboard/user');
         break;
+        case 'md':
+  navigate('/dashboard/md');
+  break;
       default:
         navigate('/dashboard/user');
     }
