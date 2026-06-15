@@ -28,12 +28,12 @@ class RequestController extends Controller
             $requests = RequestModel::with('user')
                 ->where('assigned_staff', $user->name)
                 ->get();
-        } elseif ($user->isFinance()) {
+       /* } elseif ($user->isFinance()) {
             // For finance, show billing-related requests
             $requests = RequestModel::with('user')
                 ->where('serve_type', 'Billing Issue')
-                ->get();
-        } elseif ($user->isHODSanitation()) {
+                ->get();*/
+                } elseif ($user->isHODSanitation()) {
             // For HOD Sanitation, show new connection and remove sewage water requests
             $requests = RequestModel::with('user')
                 ->whereIn('serve_type', ['New Connection', 'Remove Sewage Water'])

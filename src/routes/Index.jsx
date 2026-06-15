@@ -8,7 +8,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 // Dashboard imports (update these paths based on your actual dashboard structure)
 import CustomerDashboard from '../pages/dashboard/Custome Service/Customerservicedashboard';
 import InspectorDashboard from '../pages/dashboard/inspector/InspectorDashboard';
-import Finance from '../pages/dashboard/finance/Finance';
+//import Finance from '../pages/dashboard/finance/Finance';
 import HODSanitation from '../pages/dashboard/water and sanitation/HODSanitation';
 import HodDashboard from '../pages/dashboard/hod/HodDashboard';
 import MDDashboard from '../pages/dashboard/md/MDDashboard';
@@ -67,14 +67,14 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-      {
-        path: '/dashboard/finance',
-        element: (
-          <ProtectedRoute requiredRole="finance">
-            <Finance />
-          </ProtectedRoute>
-        ),
-      },
+    //  {
+        //path: '/dashboard/finance',
+       // element: (
+         // <ProtectedRoute requiredRole="finance">
+          //  <Finance />
+        //  </ProtectedRoute>
+       // ),
+      //},
       {
         path: '/dashboard/hod',
         element: (

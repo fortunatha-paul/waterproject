@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const SERVICE_TYPES = ['New Connection', 'Repair', 'Complaint', 'Billing Issue', 'Meter Replacement', 'Remove Sewage Water','No Water Supply', 'Other'];
+const SERVICE_TYPES = ['New Connection', 'Repair', 'Complaint', 'Meter Replacement', 'Remove Sewage Water','No Water Supply', 'Other'];
 
 export default function NewRequestForm({ onClose, onSubmit }) {
   const [form, setForm] = useState({ serviceType: '', description: '', location: '', image: null });

@@ -87,9 +87,9 @@ export const AuthProvider = ({ children }) => {
       case 'inspector':
         navigate('/dashboard/inspector');
         break;
-      case 'finance':
-        navigate('/dashboard/finance');
-        break;
+     // case 'finance':
+       // navigate('/dashboard/finance');
+       // break;
       case 'hod_sanitation':
       case 'hod sanitation':
       case 'hod':

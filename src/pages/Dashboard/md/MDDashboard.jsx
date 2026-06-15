@@ -83,7 +83,7 @@ export default function MDDashboard() {
     'All':              { types: null,          label: 'All Departments' },
     'HOD Sanitation':   { types: ['New Connection', 'Remove Sewage Water'], label: 'HOD Sanitation' },
     'Customer Service': { types: ['Repair', 'Meter Replacement', 'Complaint', 'No Water Supply', 'Other'], label: 'Customer Service' },
-    'Finance':          { types: ['Billing Issue'], label: 'Finance' },
+    //'Finance':          { types: ['Billing Issue'], label: 'Finance' },
   };
 
   const filteredRequests = deptFilter === 'All'
