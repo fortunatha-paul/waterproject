@@ -50,32 +50,39 @@ class RequestController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'serve_type' => 'required|string|max:255',
-            'description' => 'required|string',
-            'location' => 'required|string|max:255',
-        ]);
+{
+    $validated = $request->validate([
+        'serve_type'  => 'required|string|max:255',
+        'description' => 'required|string',
+        'location'    => 'required|string|max:255',
+        'application_form' => 'nullable|file|mimes:pdf|max:2048',
+    ]);
 
-        // Default initial status for new requests
-        $validated['user_id'] = auth()->id();
-        $validated['status'] = 'Submitted';
-        $validated['inspectorStatus'] = $validated['inspectorStatus'] ?? 'Not Solved';
-        // Ensure no accidental assignment on create
-        $validated['assigned_staff'] = null;
-        $validated['assigned_inspector_id'] = null;
-        // Initialize timeline with submitted event
-        $validated['timeline'] = [
-            [
-                'date' => now()->toDateString(),
-                'event' => 'Request Submitted',
-                'by' => auth()->user()->name ?? 'Customer',
-            ]
-        ];
-
-        $newRequest = RequestModel::create($validated);
-        return response()->json($newRequest, 201);
+    // Handle PDF upload
+    if ($request->hasFile('application_form')) {
+        $file = $request->file('application_form');
+        $filename = time() . '_' . $file->getClientOriginalName();
+        $file->move(public_path('uploads/forms'), $filename);
+        $validated['application_form'] = $filename;
     }
+
+    $validated['user_id']          = auth()->id();
+    $validated['status']           = 'Submitted';
+    $validated['inspectorStatus']  = 'Not Solved';
+    $validated['assigned_staff']   = null;
+    //$validated['application_form'] = $filename;
+    $validated['assigned_inspector_id'] = null;
+    $validated['timeline'] = [
+        [
+            'date'  => now()->toDateString(),
+            'event' => 'Request Submitted',
+            'by'    => auth()->user()->name ?? 'Customer',
+        ]
+    ];
+
+    $newRequest = RequestModel::create($validated);
+    return response()->json($newRequest, 201);
+}
 
     /**
      * Display the specified resource.
@@ -177,7 +184,8 @@ class RequestController extends Controller
             'serve_type' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'location' => 'sometimes|string|max:255',
-            'status' => 'sometimes|string|in:Submitted,Reviewed,Assigned,In Progress,Rejected,Resolved,Completed,Pending',
+            'status' => 'sometimes|string|in:Submitted,Reviewed,Approved,Assigned,In Progress,Rejected,Resolved,Completed,Pending',
+            'rejection_reason' => 'sometimes|nullable|string',
             'inspectorStatus' => 'sometimes|string|in:Solved,Not Solved,Ongoing',
             'priority' => 'sometimes|string|in:Low,Medium,High,Urgent',
             'assigned_staff' => 'sometimes|nullable|string|max:255',

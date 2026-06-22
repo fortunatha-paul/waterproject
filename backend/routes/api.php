@@ -18,7 +18,13 @@ Route::post('/login', [LoginController::class, 'login']);
 Route::apiResource('requests', RequestController::class)->middleware('auth:sanctum');
 Route::post('/requests/{id}/assign-inspector', [RequestController::class, 'assignInspector'])->middleware('auth:sanctum');
 
+// User Management (MD only)
 Route::get('/users', [UserController::class, 'index'])->middleware('auth:sanctum');
+Route::post('/users', [UserController::class, 'store'])->middleware('auth:sanctum');
+Route::get('/users/{id}', [UserController::class, 'show'])->middleware('auth:sanctum');
+Route::put('/users/{id}', [UserController::class, 'update'])->middleware('auth:sanctum');
+Route::delete('/users/{id}', [UserController::class, 'destroy'])->middleware('auth:sanctum');
+Route::put('/users/{id}/reset-password', [UserController::class, 'resetPassword'])->middleware('auth:sanctum');
 
 Route::get('/inspectors', function (Request $request) {
     return app(UserController::class)->index(new Request(['role' => 'inspector']));

@@ -21,6 +21,8 @@ class Request extends Model
         'timeline',
         'amount',
         'payment_status',
+        'application_form',
+        'rejection_reason',
     ];
 
     protected $attributes = [
