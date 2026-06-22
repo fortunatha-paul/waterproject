@@ -1,8 +1,15 @@
 import React from 'react';
 
-const STAGES = ['Submitted', 'Reviewed', 'Assigned', 'In Progress', 'Completed'];
+const STAGES = ['Submitted', 'Reviewed','Approved','Assigned', 'In Progress', 'Completed'];
 
-export default function ProgressBar({ currentStage }) {
+export default function ProgressBar({ currentStage, status }) {
+  if (status === 'Rejected') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '16px 20px', borderRadius: 10, background: '#FEE2E2', border: '1px solid #FCA5A5', margin: '24px 0' }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: '#991B1B' }}>❌ Your request has been Rejected</span>
+      </div>
+    );
+  }
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, width: '100%', margin: '24px 0' }}>
       {STAGES.map((stage, i) => {

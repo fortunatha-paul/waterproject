@@ -38,6 +38,9 @@ export const api = {
   // Requests
   getRequests: () => apiRequest('/requests'),
   getRequest: (id) => apiRequest(`/requests/${id}`),
+  // Inspector reports
+  getInspectorReports: () => apiRequest('/inspector-reports'),
+  getInspectorReport: (id) => apiRequest(`/inspector-reports/${id}`),
   createRequest: (requestData) => apiRequest('/requests', {
     method: 'POST',
     body: JSON.stringify(requestData)

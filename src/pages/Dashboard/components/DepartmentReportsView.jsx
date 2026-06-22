@@ -35,7 +35,18 @@ function ReportStatusBadge({ status }) {
   );
 }
 
-function ReportCard({ report, onMarkReviewed, onMarkActioned }) {
+function DetailRow({ label, value }) {
+  return (
+    <div style={{ background: '#fff', padding: 14, borderRadius: 10, border: '1px solid #e5e7eb' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', marginBottom: 6 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 14, color: '#1f2937' }}>{value}</div>
+    </div>
+  );
+}
+
+function ReportCard({ report, onViewReport, onMarkReviewed, onMarkActioned }) {
   return (
     <div
       style={{
@@ -67,139 +78,119 @@ function ReportCard({ report, onMarkReviewed, onMarkActioned }) {
         <ReportStatusBadge status={report.status} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #e5e7eb' }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 4 }}>
-            Inspector
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#1F2937' }}>
-            {report.inspector?.name || 'N/A'}
-          </div>
-        </div>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 4 }}>
-            Visit Date
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#1F2937' }}>
-            {report.visit_date}
-          </div>
-        </div>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 4 }}>
-            Area Visited
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#1F2937' }}>
-            {report.area_visited}
-          </div>
-        </div>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 4 }}>
-            Submitted
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#1F2937' }}>
-            {new Date(report.created_at).toLocaleDateString()}
-          </div>
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 16 }}>
+        <DetailRow label="Inspector" value={report.inspector?.name || 'N/A'} />
+        <DetailRow label="Visit Date" value={report.visit_date || 'N/A'} />
+        <DetailRow label="Area Visited" value={report.area_visited || 'N/A'} />
+        <DetailRow label="Submitted" value={new Date(report.created_at).toLocaleDateString()} />
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 8 }}>
-          Findings
-        </div>
-        <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, background: '#F9FAFB', padding: 12, borderRadius: 8 }}>
-          {report.findings}
-        </div>
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 8 }}>
-          Work Done
-        </div>
-        <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, background: '#F9FAFB', padding: 12, borderRadius: 8 }}>
-          {report.work_done}
-        </div>
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 8 }}>
-          Recommendations
-        </div>
-        <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, background: '#F9FAFB', padding: 12, borderRadius: 8 }}>
-          {report.recommendations}
-        </div>
-      </div>
-
-      {report.water_supply_status && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #e5e7eb' }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 4 }}>
-              Water Supply
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#1F2937' }}>
-              {report.water_supply_status}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 4 }}>
-              Pipe Condition
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#1F2937' }}>
-              {report.pipe_condition}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 4 }}>
-              Sewage Issue
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: report.sewage_issue ? '#EF4444' : '#10B981' }}>
-              {report.sewage_issue ? 'Yes' : 'No'}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {report.status === 'Submitted' && (
-        <div style={{ display: 'flex', gap: 12 }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => onViewReport(report)}
+          style={{
+            padding: '10px 16px', borderRadius: 8, border: 'none',
+            background: '#3B82F6', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          }}
+        >
+          View Report
+        </button>
+        {report.status === 'Submitted' && (
           <button
             onClick={() => onMarkReviewed(report.id)}
             style={{
-              flex: 1,
-              padding: '10px 16px',
-              borderRadius: 8,
-              border: 'none',
-              background: '#FFFBEB',
-              color: '#B45309',
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
+              padding: '10px 16px', borderRadius: 8, border: 'none',
+              background: '#FFFBEB', color: '#B45309', fontSize: 13, fontWeight: 700, cursor: 'pointer',
             }}
-            onMouseEnter={(e) => (e.target.style.background = '#FEF3C7')}
-            onMouseLeave={(e) => (e.target.style.background = '#FFFBEB')}
           >
-            Mark as Reviewed
+            Mark Reviewed
           </button>
+        )}
+        <button
+          onClick={() => onMarkActioned(report.id)}
+          style={{
+            padding: '10px 16px', borderRadius: 8, border: 'none',
+            background: '#F0FDF4', color: '#15803D', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          }}
+        >
+          Mark Actioned
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ReportDetail({ report, onBack, onMarkReviewed, onMarkActioned }) {
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+      <button
+        onClick={onBack}
+        style={{
+          marginBottom: 20,
+          padding: '10px 16px',
+          borderRadius: 8,
+          border: '1px solid #d1d5db',
+          background: '#f9fafb',
+          color: '#374151',
+          fontWeight: 700,
+          cursor: 'pointer',
+        }}
+      >
+        ← Back to report list
+      </button>
+
+      <div style={{ display: 'grid', gap: 18 }}>
+        <div>
+          <div style={{ fontSize: 12, color: '#6B7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
+            Report Details
+          </div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1f2937', margin: 0 }}>{report.title}</h2>
+          <div style={{ marginTop: 6, fontSize: 13, color: '#6b7280' }}>
+            Report #{report.id} · Submitted {new Date(report.created_at).toLocaleDateString()}
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+          <DetailRow label="Inspector" value={report.inspector?.name || 'N/A'} />
+          <DetailRow label="Visit Date" value={report.visit_date || 'N/A'} />
+          <DetailRow label="Water Supply" value={report.water_supply_status || 'N/A'} />
+          <DetailRow label="Pipe Condition" value={report.pipe_condition || 'N/A'} />
+          <DetailRow label="Sewage Issue" value={report.sewage_issue ? 'Yes' : 'No'} />
+          {report.request && <DetailRow label="Request" value={`REQ-${report.request.id}`} />}
+        </div>
+
+        <div style={{ padding: '18px', background: '#F9FAFB', borderRadius: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#1E40AF', marginBottom: 8 }}>Findings</div>
+          <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.7 }}>{report.findings}</div>
+        </div>
+
+        <div style={{ padding: '18px', background: '#F9FAFB', borderRadius: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#1E40AF', marginBottom: 8 }}>Work Done</div>
+          <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.7 }}>{report.work_done}</div>
+        </div>
+
+        <div style={{ padding: '18px', background: '#F9FAFB', borderRadius: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#1E40AF', marginBottom: 8 }}>Recommendations</div>
+          <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.7 }}>{report.recommendations}</div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {report.status === 'Submitted' && (
+            <button
+              onClick={() => onMarkReviewed(report.id)}
+              style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#FFFBEB', color: '#B45309', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Mark Reviewed
+            </button>
+          )}
           <button
             onClick={() => onMarkActioned(report.id)}
-            style={{
-              flex: 1,
-              padding: '10px 16px',
-              borderRadius: 8,
-              border: 'none',
-              background: '#F0FDF4',
-              color: '#15803D',
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-            }}
-            onMouseEnter={(e) => (e.target.style.background = '#DCFCE7')}
-            onMouseLeave={(e) => (e.target.style.background = '#F0FDF4')}
+            style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#F0FDF4', color: '#15803D', fontWeight: 700, cursor: 'pointer' }}
           >
-            Mark as Actioned
+            Mark Actioned
           </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -209,6 +200,7 @@ export default function DepartmentReportsView({ serveTypes, departmentName }) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [error, setError] = useState(null);
+  const [viewingReport, setViewingReport] = useState(null);
 
   useEffect(() => {
     fetchReports();
@@ -219,13 +211,10 @@ export default function DepartmentReportsView({ serveTypes, departmentName }) {
       setLoading(true);
       configureAxios();
       const response = await axios.get(API_URL + '/inspector-reports');
-      
-      // Filter reports by request serve_type
-      const filtered = response.data.filter(report => {
+      const filtered = response.data.filter((report) => {
         if (!report.request) return true;
         return serveTypes.includes(report.request.serve_type);
       });
-      
       setReports(filtered);
       setError(null);
     } catch (err) {
@@ -239,10 +228,7 @@ export default function DepartmentReportsView({ serveTypes, departmentName }) {
   const handleMarkReviewed = async (reportId) => {
     try {
       configureAxios();
-      await axios.patch(API_URL + '/inspector-reports/' + reportId, {
-        status: 'Reviewed',
-      });
-      // Refresh reports
+      await axios.patch(API_URL + '/inspector-reports/' + reportId, { status: 'Reviewed' });
       await fetchReports();
     } catch (err) {
       alert('Failed to update report status');
@@ -252,10 +238,7 @@ export default function DepartmentReportsView({ serveTypes, departmentName }) {
   const handleMarkActioned = async (reportId) => {
     try {
       configureAxios();
-      await axios.patch(API_URL + '/inspector-reports/' + reportId, {
-        status: 'Actioned',
-      });
-      // Refresh reports
+      await axios.patch(API_URL + '/inspector-reports/' + reportId, { status: 'Actioned' });
       await fetchReports();
     } catch (err) {
       alert('Failed to update report status');
@@ -270,6 +253,14 @@ export default function DepartmentReportsView({ serveTypes, departmentName }) {
       : activeTab === 'reviewed'
       ? reports.filter((r) => r.status === 'Reviewed')
       : reports.filter((r) => r.status === 'Actioned');
+
+  const handleViewReport = (report) => {
+    setViewingReport(report);
+  };
+
+  const handleBackToList = () => {
+    setViewingReport(null);
+  };
 
   return (
     <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #e5e7eb', marginTop: 24 }}>
@@ -309,76 +300,40 @@ export default function DepartmentReportsView({ serveTypes, departmentName }) {
         </div>
       )}
 
-      {!loading && reports.length > 0 && (
+      {!loading && reports.length > 0 && !viewingReport && (
         <>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 24, borderBottom: '1px solid #e5e7eb', paddingBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 24, borderBottom: '1px solid #e5e7eb', paddingBottom: 16, flexWrap: 'wrap' }}>
             <button
               onClick={() => setActiveTab('all')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                border: 'none',
-                background: activeTab === 'all' ? '#3B82F6' : '#F3F4F6',
-                color: activeTab === 'all' ? '#fff' : '#6B7280',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              style={tabButtonStyle(activeTab === 'all')}
             >
               All ({reports.length})
             </button>
             <button
               onClick={() => setActiveTab('new')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                border: 'none',
-                background: activeTab === 'new' ? '#3B82F6' : '#F3F4F6',
-                color: activeTab === 'new' ? '#fff' : '#6B7280',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              style={tabButtonStyle(activeTab === 'new')}
             >
               New ({reports.filter((r) => r.status === 'Submitted').length})
             </button>
             <button
               onClick={() => setActiveTab('reviewed')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                border: 'none',
-                background: activeTab === 'reviewed' ? '#3B82F6' : '#F3F4F6',
-                color: activeTab === 'reviewed' ? '#fff' : '#6B7280',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              style={tabButtonStyle(activeTab === 'reviewed')}
             >
               Reviewed ({reports.filter((r) => r.status === 'Reviewed').length})
             </button>
             <button
               onClick={() => setActiveTab('actioned')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                border: 'none',
-                background: activeTab === 'actioned' ? '#3B82F6' : '#F3F4F6',
-                color: activeTab === 'actioned' ? '#fff' : '#6B7280',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              style={tabButtonStyle(activeTab === 'actioned')}
             >
               Actioned ({reports.filter((r) => r.status === 'Actioned').length})
             </button>
           </div>
-
           <div>
             {filteredReports.map((report) => (
               <ReportCard
                 key={report.id}
                 report={report}
+                onViewReport={handleViewReport}
                 onMarkReviewed={handleMarkReviewed}
                 onMarkActioned={handleMarkActioned}
               />
@@ -386,6 +341,28 @@ export default function DepartmentReportsView({ serveTypes, departmentName }) {
           </div>
         </>
       )}
+
+      {viewingReport && (
+        <ReportDetail
+          report={viewingReport}
+          onBack={handleBackToList}
+          onMarkReviewed={handleMarkReviewed}
+          onMarkActioned={handleMarkActioned}
+        />
+      )}
     </div>
   );
+}
+
+function tabButtonStyle(active) {
+  return {
+    padding: '8px 16px',
+    borderRadius: 8,
+    border: 'none',
+    background: active ? '#3B82F6' : '#F3F4F6',
+    color: active ? '#fff' : '#6B7280',
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+  };
 }

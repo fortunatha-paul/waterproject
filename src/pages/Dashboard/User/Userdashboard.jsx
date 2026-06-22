@@ -45,7 +45,9 @@ export default function UserDashboard() {
         technician: req.assigned_staff,
         expectedCompletion: req.deadline,
         //stage: req.status === 'Completed' ? 4 : req.status === 'In Progress' ? 3 : (req.status === 'Pending' || req.status === 'Submitted') ? 2 : 1,
-        stage: req.status === 'Completed' ? 4 : req.status === 'In Progress' ? 3 : req.status === 'Assigned' ? 2 : req.status === 'Reviewed' ? 1 : 0,
+        stage: req.status === 'Completed' ? 5 : req.status === 'In Progress' ? 4 : req.status === 'Assigned' ? 3 : req.status === 'Approved' ? 2 : req.status === 'Reviewed' ? 1 : 0,
+        rejection_reason: req.rejection_reason || null,
+        application_form: req.application_form || null,
         priority: req.priority || 'Medium',
         comments: Array.isArray(req.comments) ? req.comments : [],
         timeline: Array.isArray(req.timeline) ? req.timeline : [],
@@ -83,7 +85,7 @@ export default function UserDashboard() {
     if (savedState) {
       setRequests(savedState.requests || []);
       setShowForm(savedState.showForm || false);
-      setSelectedRequest(savedState.selectedRequest || null);
+      //setSelectedRequest(savedState.selectedRequest || null);
       setSuccessMsg(savedState.successMsg || '');
       setLoading(savedState.loading !== undefined ? savedState.loading : false);
     }
@@ -102,14 +104,19 @@ export default function UserDashboard() {
   const inProgress = requests.filter((r) => r.status === 'In Progress').length;
   const completed = requests.filter((r) => r.status === 'Completed').length;
 
-  const handleNewRequest = async (form) => {
+ const handleNewRequest = async (form) => {
     setLoading(true);
     try {
-      // Save to database via API
-      await axios.post(`${API_URL}/requests`, {
-        serve_type: form.serviceType,
-        description: form.description,
-        location: form.location,
+      const formData = new FormData();
+      formData.append('serve_type', form.serviceType);
+      formData.append('description', form.description);
+      formData.append('location', form.location);
+      if (form.applicationForm) {
+        formData.append('application_form', form.applicationForm);
+      }
+
+      await axios.post(`${API_URL}/requests`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       // Refresh data from database to ensure consistency
@@ -138,11 +145,12 @@ export default function UserDashboard() {
     stateManager.saveState(currentState);
   }, [requests, showForm, selectedRequest, successMsg, loading, stateManager]);
 
-  if (selectedRequest) {
+ if (selectedRequest) {
+    const freshRequest = requests.find(r => r.id === selectedRequest.id) || selectedRequest;
     return (
       <div style={{ minHeight: '100vh', background: '#F9FAFB', padding: '24px 32px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <RequestDetails request={selectedRequest} onBack={() => setSelectedRequest(null)} />
+          <RequestDetails request={freshRequest} onBack={() => setSelectedRequest(null)} />
         </div>
       </div>
     );

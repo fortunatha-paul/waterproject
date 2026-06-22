@@ -30,7 +30,13 @@ export default function RequestDetails({ request, onBack }) {
           <StatusBadge status={request.status} />
         </div>
 
-        <ProgressBar currentStage={request.stage} />
+       <ProgressBar currentStage={request.stage} status={request.status} />
+       {request.status === 'Rejected' && request.rejection_reason && (
+  <div style={{ background: '#FEE2E2', borderRadius: 10, padding: '16px 20px', margin: '16px 0', border: '1px solid #FCA5A5' }}>
+    <div style={{ fontSize: 13, fontWeight: 700, color: '#991B1B', marginBottom: 4 }}>Reason for Rejection:</div>
+    <div style={{ fontSize: 14, color: '#7F1D1D' }}>{request.rejection_reason}</div>
+  </div>
+)}
 
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',

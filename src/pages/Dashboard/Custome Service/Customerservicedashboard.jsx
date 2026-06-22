@@ -5,7 +5,6 @@ import KpiCards from './components/KpiCards';
 import RequestsTable from './components/RequestsTable';
 import RequestDetails from './components/RequestDetails';
 import AssignTaskModal from './components/AssignTaskModal';
-import DepartmentReportsView from '../components/DepartmentReportsView';
 import DashboardStateManager from '../../../utils/dashboardState';
 
 const CustomerServiceDashboard = () => {
@@ -177,6 +176,7 @@ const CustomerServiceDashboard = () => {
                         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>Role</div>
                         <div style={{ fontSize: 13, color: '#93C5FD', fontWeight: 600 }}>Customer Service</div>
                     </div>
+                    
                     <button
                         onClick={logout}
                         style={{
@@ -217,11 +217,7 @@ const CustomerServiceDashboard = () => {
                     serviceTypeOptions={['All', 'New Connection', 'Repair', 'Complaint', 'Meter Replacement', 'Remove Sewage Water', 'No Water Supply', 'Other']}
                 />
 
-                {/* Inspector Reports Section */}
-                <DepartmentReportsView 
-                    serveTypes={['Repair', 'Meter Replacement', 'Complaint', 'No Water Supply', 'Other']}
-                    departmentName="Customer Service"
-                />
+                {/* Inspector Reports Section removed — reports are now visible inside individual request details only */}
             </div>
 
             {/* Assign Task Modal */}
@@ -232,6 +228,8 @@ const CustomerServiceDashboard = () => {
                     onSave={handleSaveAssignment}
                 />
             )}
+
+            
         </div>
     );
 };

@@ -1,0 +1,45 @@
+*** Begin Patch
+*** Update File: c:\xampp\htdocs\Water-project\src\pages\dashboard\Custome Service\components\RequestDetails.jsx
+@@
+-import axios from 'axios';
+-import SendNotificationFromRequest from './SendNotificationFromRequest';
++import axios from 'axios';
+@@
+-  const [showNotificationModal, setShowNotificationModal] = useState(false);
++  
+@@
+-            <div style={{ display: 'flex', gap: 8 }}>
+-            <button onClick={handleAssignClick} style={{
+-              padding: '8px 18px', borderRadius: 8, border: 'none',
+-              background: '#8B5CF6', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+-            }}>
+-              Assign / Edit
+-            </button>
+-            <button onClick={() => onStatusChange && onStatusChange(request)} style={{
+-              padding: '8px 18px', borderRadius: 8, border: 'none',
+-              background: '#3B82F6', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+-            }}>
+-              Update Status
+-            </button>
+-            <button onClick={() => setShowNotificationModal(true)} style={{
+-              padding: '8px 18px', borderRadius: 8, border: 'none',
+-              background: '#10B981', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+-            }}>
+-              📧 Send Notification
+-            </button>
+-          </div>
++            <div style={{ display: 'flex', gap: 8 }}>
++            <button onClick={handleAssignClick} style={{
++              padding: '8px 18px', borderRadius: 8, border: 'none',
++              background: '#8B5CF6', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
++            }}>
++              Assign / Edit
++            </button>
++            <button onClick={() => onStatusChange && onStatusChange(request)} style={{
++              padding: '8px 18px', borderRadius: 8, border: 'none',
++              background: '#3B82F6', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
++            }}>
++              Update Status
++            </button>
++          </div>
+*** End Patch

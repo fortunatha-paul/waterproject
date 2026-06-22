@@ -1,0 +1,1136 @@
+diff --git a/src/components/NotificationBell.jsx b/src/components/NotificationBell.jsx
+deleted file mode 100644
+index 1234567..0000000
+--- a/src/components/NotificationBell.jsx
++++ /dev/null
+@@ -1,49 +0,0 @@
+-import { useEffect, useState } from 'react';
+-import './NotificationBell.css';
+-import { api } from '../utils/api';
+-
+-export default function NotificationBell({ onOpenPanel }) {
+-  const [unreadCount, setUnreadCount] = useState(0);
+-
+-  useEffect(() => {
+-    // Fetch initial unread count
+-    fetchUnreadCount();
+-
+-    // Poll for new notifications every 30 seconds
+-    const interval = setInterval(fetchUnreadCount, 30000);
+-    return () => clearInterval(interval);
+-  }, []);
+-
+-  const fetchUnreadCount = async () => {
+-    try {
+-      const data = await api.getUnreadCount();
+-      setUnreadCount(data.unread_count || 0);
+-    } catch (error) {
+-      console.error('Error fetching unread count:', error);
+-    }
+-  };
+-
+-  return (
+-    <div className="notification-bell" onClick={onOpenPanel}>
+-      <svg
+-        xmlns="http://www.w3.org/2000/svg"
+-        width="24"
+-        height="24"
+-        viewBox="0 0 24 24"
+-        fill="none"
+-        stroke="currentColor"
+-        strokeWidth="2"
+-        strokeLinecap="round"
+-        strokeLinejoin="round"
+-      >
+-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+-        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+-      </svg>
+-      {unreadCount > 0 && <span className="badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+-    </div>
+-  );
+-}
+diff --git a/src/components/NotificationBell.css b/src/components/NotificationBell.css
+deleted file mode 100644
+index 2345678..0000000
+--- a/src/components/NotificationBell.css
++++ /dev/null
+@@ -1,30 +0,0 @@
+-.notification-bell {
+-  position: relative;
+-  cursor: pointer;
+-  color: #666;
+-  transition: color 0.3s ease;
+-}
+-
+-.notification-bell:hover {
+-  color: #0066cc;
+-}
+-
+-.notification-bell svg {
+-  width: 24px;
+-  height: 24px;
+-}
+-
+-.notification-bell .badge {
+-  position: absolute;
+-  top: -8px;
+-  right: -8px;
+-  background-color: #ff4444;
+-  color: white;
+-  border-radius: 50%;
+-  width: 22px;
+-  height: 22px;
+-  display: flex;
+-  align-items: center;
+-  justify-content: center;
+-  font-size: 12px;
+-  font-weight: bold;
+-  border: 2px solid white;
+-}
+diff --git a/src/components/NotificationPanel.jsx b/src/components/NotificationPanel.jsx
+deleted file mode 100644
+index 3456789..0000000
+--- a/src/components/NotificationPanel.jsx
++++ /dev/null
+@@ -1,171 +0,0 @@
+-import { useEffect, useState } from 'react';
+-import './NotificationPanel.css';
+-import { api } from '../utils/api';
+-
+-export default function NotificationPanel({ isOpen, onClose }) {
+-  const [notifications, setNotifications] = useState([]);
+-  const [loading, setLoading] = useState(false);
+-  const [activeTab, setActiveTab] = useState('all'); // all, unread
+-
+-  useEffect(() => {
+-    if (isOpen) {
+-      fetchNotifications();
+-    }
+-  }, [isOpen, activeTab]);
+-
+-  const fetchNotifications = async () => {
+-    setLoading(true);
+-    try {
+-      const data = await api.getNotifications();
+-      const filtered = activeTab === 'unread' ? data.filter((n) => !n.read_at) : data;
+-      setNotifications(filtered);
+-    } catch (error) {
+-      console.error('Error fetching notifications:', error);
+-    } finally {
+-      setLoading(false);
+-    }
+-  };
+-
+-  const handleMarkAsRead = async (id) => {
+-    try {
+-      await api.markNotificationAsRead(id);
+-      fetchNotifications();
+-    } catch (error) {
+-      console.error('Error marking notification as read:', error);
+-    }
+-  };
+-
+-  const handleMarkAllAsRead = async () => {
+-    try {
+-      await api.markAllNotificationsAsRead();
+-      fetchNotifications();
+-    } catch (error) {
+-      console.error('Error marking all as read:', error);
+-    }
+-  };
+-
+-  const handleDelete = async (id) => {
+-    try {
+-      await api.deleteNotification(id);
+-      fetchNotifications();
+-    } catch (error) {
+-      console.error('Error deleting notification:', error);
+-    }
+-  };
+-
+-  const getTypeColor = (type) => {
+-    const colors = {
+-      status_update: '#0066cc',
+-      general: '#666',
+-      alert: '#ff6600',
+-      reminder: '#ff9900',
+-    };
+-    return colors[type] || '#666';
+-  };
+-
+-  const getTypeLabel = (type) => {
+-    const labels = {
+-      status_update: 'Status Update',
+-      general: 'General',
+-      alert: 'Alert',
+-      reminder: 'Reminder',
+-    };
+-    return labels[type] || type;
+-  };
+-
+-  if (!isOpen) return null;
+-
+-  return (
+-    <div className="notification-overlay" onClick={onClose}>
+-      <div className="notification-panel" onClick={(e) => e.stopPropagation()}>
+-        <div className="panel-header">
+-          <h3>Notifications</h3>
+-          <button className="close-btn" onClick={onClose}>
+-            ✕
+-          </button>
+-        </div>
+-
+-        <div className="panel-tabs">
+-          <button
+-            className={`tab ${activeTab === 'all' ? 'active' : ''}`}
+-            onClick={() => setActiveTab('all')}
+-          >
+-            All
+-          </button>
+-          <button
+-            className={`tab ${activeTab === 'unread' ? 'active' : ''}`}
+-            onClick={() => setActiveTab('unread')}
+-          >
+-            Unread
+-          </button>
+-        </div>
+-
+-        {notifications.length > 0 && (
+-          <button className="mark-all-read" onClick={handleMarkAllAsRead}>
+-            Mark all as read
+-          </button>
+-        )}
+-
+-        <div className="notifications-list">
+-          {loading ? (
+-            <div className="loading">Loading...</div>
+-          ) : notifications.length === 0 ? (
+-            <div className="empty-state">
+-              <p>No {activeTab === 'unread' ? 'unread' : ''} notifications</p>
+-            </div>
+-          ) : (
+-            notifications.map((notification) => (
+-              <div
+-                key={notification.id}
+-                className={`notification-item ${!notification.read_at ? 'unread' : ''}`}
+-              >
+-                <div className="notification-content">
+-                  <div className="notification-header">
+-                    <h4>{notification.title}</h4>
+-                    <span
+-                      className="type-badge"
+-                      style={{ backgroundColor: getTypeColor(notification.type) }}
+-                    >
+-                      {getTypeLabel(notification.type)}
+-                    </span>
+-                  </div>
+-                  <p className="notification-message">{notification.message}</p>
+-                  {notification.sender && (
+-                    <p className="notification-sender">From: {notification.sender.name}</p>
+-                  )}
+-                  <p className="notification-time">
+-                    {new Date(notification.created_at).toLocaleDateString()}{' '}
+-                    {new Date(notification.created_at).toLocaleTimeString()}
+-                  </p>
+-                </div>
+-
+-                <div className="notification-actions">
+-                  {!notification.read_at && (
+-                    <button
+-                      className="action-btn read-btn"
+-                      onClick={() => handleMarkAsRead(notification.id)}
+-                      title="Mark as read"
+-                    >
+-                      ✓
+-                    </button>
+-                  )}
+-                  <button
+-                    className="action-btn delete-btn"
+-                    onClick={() => handleDelete(notification.id)}
+-                    title="Delete"
+-                  >
+-                    🗑
+-                  </button>
+-                </div>
+-              </div>
+-            ))
+-          )}
+-        </div>
+-      </div>
+-    </div>
+-  );
+-}
+diff --git a/src/components/NotificationPanel.css b/src/components/NotificationPanel.css
+deleted file mode 100644
+index 4567890..0000000
+--- a/src/components/NotificationPanel.css
++++ /dev/null
+@@ -1,166 +0,0 @@
+-.notification-overlay {
+-  position: fixed;
+-  top: 0;
+-  left: 0;
+-  right: 0;
+-  bottom: 0;
+-  background-color: rgba(0, 0, 0, 0.5);
+-  display: flex;
+-  justify-content: flex-end;
+-  z-index: 1000;
+-}
+-
+-.notification-panel {
+-  background: white;
+-  width: 400px;
+-  height: 100vh;
+-  display: flex;
+-  flex-direction: column;
+-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+-  animation: slideIn 0.3s ease;
+-}
+-
+-@keyframes slideIn {
+-  from {
+-    transform: translateX(400px);
+-  }
+-  to {
+-    transform: translateX(0);
+-  }
+-}
+-
+-.panel-header {
+-  display: flex;
+-  justify-content: space-between;
+-  align-items: center;
+-  padding: 20px;
+-  border-bottom: 1px solid #eee;
+-}
+-
+-.panel-header h3 {
+-  margin: 0;
+-  font-size: 20px;
+-  color: #333;
+-}
+-
+-.close-btn {
+-  background: none;
+-  border: none;
+-  font-size: 24px;
+-  cursor: pointer;
+-  color: #666;
+-  transition: color 0.3s ease;
+-}
+-
+-.close-btn:hover {
+-  color: #333;
+-}
+-
+-.panel-tabs {
+-  display: flex;
+-  border-bottom: 1px solid #eee;
+-  padding: 0 20px;
+-}
+-
+-.tab {
+-  padding: 12px 0;
+-  margin-right: 20px;
+-  border: none;
+-  background: none;
+-  cursor: pointer;
+-  color: #666;
+-  font-size: 14px;
+-  border-bottom: 2px solid transparent;
+-  transition: all 0.3s ease;
+-}
+-
+-.tab.active {
+-  color: #0066cc;
+-  border-bottom-color: #0066cc;
+-}
+-
+-.tab:hover {
+-  color: #0066cc;
+-}
+-
+-.mark-all-read {
+-  padding: 10px 20px;
+-  background: #f0f0f0;
+-  border: none;
+-  cursor: pointer;
+-  color: #0066cc;
+-  font-size: 12px;
+-  transition: background 0.3s ease;
+-}
+-
+-.mark-all-read:hover {
+-  background: #e0e0e0;
+-}
+-
+-.notifications-list {
+-  flex: 1;
+-  overflow-y: auto;
+-  padding: 10px 0;
+-}
+-
+-.notification-item {
+-  display: flex;
+-  padding: 12px 20px;
+-  border-bottom: 1px solid #f0f0f0;
+-  gap: 10px;
+-  transition: background 0.3s ease;
+-}
+-
+-.notification-item:hover {
+-  background-color: #f9f9f9;
+-}
+-
+-.notification-item.unread {
+-  background-color: #f0f8ff;
+-  font-weight: 500;
+-}
+-
+-.notification-content {
+-  flex: 1;
+-  min-width: 0;
+-}
+-
+-.notification-header {
+-  display: flex;
+-  justify-content: space-between;
+-  align-items: start;
+-  gap: 10px;
+-  margin-bottom: 5px;
+-}
+-
+-.notification-header h4 {
+-  margin: 0;
+-  font-size: 14px;
+-  color: #333;
+-}
+-
+-.type-badge {
+-  display: inline-block;
+-  padding: 2px 8px;
+-  border-radius: 3px;
+-  color: white;
+-  font-size: 10px;
+-  white-space: nowrap;
+-  flex-shrink: 0;
+-}
+-
+-.notification-message {
+-  margin: 8px 0;
+-  font-size: 13px;
+-  color: #555;
+-  line-height: 1.4;
+-}
+-
+-.notification-sender {
+-  margin: 5px 0;
+-  font-size: 12px;
+-  color: #888;
+-  font-style: italic;
+-}
+-
+-.notification-time {
+-  margin: 5px 0 0 0;
+-  font-size: 11px;
+-  color: #aaa;
+-}
+-
+-.notification-actions {
+-  display: flex;
+-  gap: 5px;
+-  flex-shrink: 0;
+-}
+-
+-.action-btn {
+-  background: none;
+-  border: none;
+-  cursor: pointer;
+-  font-size: 16px;
+-  opacity: 0.6;
+-  transition: opacity 0.3s ease;
+-  padding: 0;
+-  min-width: 24px;
+-}
+-
+-.action-btn:hover {
+-  opacity: 1;
+-}
+-
+-.action-btn.read-btn:hover {
+-  color: #0066cc;
+-}
+-
+-.action-btn.delete-btn:hover {
+-  color: #ff4444;
+-}
+-
+-.loading {
+-  display: flex;
+-  justify-content: center;
+-  align-items: center;
+-  height: 200px;
+-  color: #666;
+-}
+-
+-.empty-state {
+-  display: flex;
+-  justify-content: center;
+-  align-items: center;
+-  height: 200px;
+-  color: #aaa;
+-  text-align: center;
+-}
+-
+-@media (max-width: 600px) {
+-  .notification-panel {
+-    width: 100%;
+-  }
+-}
+diff --git a/src/pages/dashboard/Custome Service/components/SendNotificationFromRequest.jsx b/src/pages/dashboard/Custome Service/components/SendNotificationFromRequest.jsx
+deleted file mode 100644
+index 5678901..0000000
+--- a/src/pages/dashboard/Custome Service/components/SendNotificationFromRequest.jsx
++++ /dev/null
+@@ -1,142 +0,0 @@
+-import { useState, useEffect } from 'react';
+-import './SendNotificationFromRequest.css';
+-import { api } from '../../../../utils/api';
+-
+-export default function SendNotificationFromRequest({ isOpen, onClose, request, onSuccess }) {
+-  const [title, setTitle] = useState('');
+-  const [message, setMessage] = useState('');
+-  const [type, setType] = useState('status_update');
+-  const [loading, setLoading] = useState(false);
+-  const [error, setError] = useState('');
+-  const [resolvedUserId, setResolvedUserId] = useState(null);
+-
+-  useEffect(() => {
+-    // Try to resolve the user id when modal opens
+-    const resolveUser = async () => {
+-      if (!isOpen || !request) return;
+-      const direct = request.user_id || request.userId || request.user?.id;
+-      if (direct) {
+-        setResolvedUserId(direct);
+-        return;
+-      }
+-
+-      // As a fallback, fetch full request from API to get user_id
+-      try {
+-        const reqId = request.id && request.id.toString().includes('REQ-')
+-          ? request.id.replace('REQ-', '')
+-          : request.id;
+-        const full = await api.getRequest(reqId);
+-        if (full && (full.user_id || full.user?.id)) {
+-          setResolvedUserId(full.user_id || full.user?.id);
+-        }
+-      } catch (err) {
+-        console.warn('Failed to resolve user id for notification', err);
+-      }
+-    };
+-    resolveUser();
+-  }, [isOpen, request]);
+-
+-  const handleSend = async (e) => {
+-    e.preventDefault();
+-    setLoading(true);
+-    setError('');
+-
+-    if (!title.trim() || !message.trim()) {
+-      setError('Please fill in all fields');
+-      setLoading(false);
+-      return;
+-    }
+-
+-    try {
+-      const requestId = request.id && request.id.toString().includes('REQ-') 
+-        ? request.id.replace('REQ-', '') 
+-        : request.id;
+-      
+-      const userId = resolvedUserId || request.user_id || request.userId || request.user?.id;
+-
+-      if (!userId) {
+-        throw new Error('The user id field is required.');
+-      }
+-
+-      await api.sendNotification({
+-        user_id: userId,
+-        request_id: requestId,
+-        title,
+-        message,
+-        type,
+-      });
+-
+-      // Success
+-      setTitle('');
+-      setMessage('');
+-      setType('status_update');
+-      setError('');
+-      if (onSuccess) onSuccess();
+-      onClose();
+-    } catch (error) {
+-      console.error('Error sending notification:', error);
+-      setError(error.message || 'Failed to send notification');
+-    } finally {
+-      setLoading(false);
+-    }
+-  };
+-
+-  if (!isOpen || !request) return null;
+-
+-  const customerName = request.customerName || request.user?.name || 'Customer';
+-
+-  return (
+-    <div className="notification-modal-overlay" onClick={onClose}>
+-      <div className="notification-modal-content" onClick={(e) => e.stopPropagation()}>
+-        <div className="modal-header">
+-          <h2>Send Notification to {customerName}</h2>
+-          <button className="close-btn" onClick={onClose}>
+-            ✕
+-          </button>
+-        </div>
+-
+-        <form onSubmit={handleSend} className="notification-form">
+-          {error && <div className="error-message">{error}</div>}
+-
+-          <div className="form-group">
+-            <label>Title *</label>
+-            <input
+-              type="text"
+-              value={title}
+-              onChange={(e) => setTitle(e.target.value)}
+-              placeholder="e.g., Request Status Update"
+-              maxLength="255"
+-              disabled={loading}
+-            />
+-          </div>
+-
+-          <div className="form-group">
+-            <label>Message *</label>
+-            <textarea
+-              value={message}
+-              onChange={(e) => setMessage(e.target.value)}
+-              placeholder="Type your notification message..."
+-              rows="5"
+-              disabled={loading}
+-            />
+-          </div>
+-
+-          <div className="form-group">
+-            <label>Type</label>
+-            <select value={type} onChange={(e) => setType(e.target.value)} disabled={loading}>
+-              <option value="status_update">Status Update</option>
+-              <option value="alert">Alert</option>
+-              <option value="reminder">Reminder</option>
+-              <option value="general">General</option>
+-            </select>
+-          </div>
+-
+-          <div className="request-info">
+-            <p>
+-              <strong>Request:</strong> {request.id} - {request.serviceType}
+-            </p>
+-            <p>
+-              <strong>Customer:</strong> {customerName}
+-            </p>
+-          </div>
+-
+-          <div className="form-actions">
+-            <button type="button" className="btn btn-cancel" onClick={onClose} disabled={loading}>
+-              Cancel
+-            </button>
+-            <button type="submit" className="btn btn-primary" disabled={loading}>
+-              {loading ? 'Sending...' : 'Send Notification'}
+-            </button>
+-          </div>
+-        </form>
+-      </div>
+-    </div>
+-  );
+-}
+diff --git a/src/pages/dashboard/Custome Service/components/SendNotificationFromRequest.css b/src/pages/dashboard/Custome Service/components/SendNotificationFromRequest.css
+deleted file mode 100644
+index 6789012..0000000
+--- a/src/pages/dashboard/Custome Service/components/SendNotificationFromRequest.css
++++ /dev/null
+@@ -1,129 +0,0 @@
+-.notification-modal-overlay {
+-  position: fixed;
+-  top: 0;
+-  left: 0;
+-  right: 0;
+-  bottom: 0;
+-  background-color: rgba(0, 0, 0, 0.5);
+-  display: flex;
+-  justify-content: center;
+-  align-items: center;
+-  z-index: 1001;
+-}
+-
+-.notification-modal-content {
+-  background: white;
+-  border-radius: 8px;
+-  width: 90%;
+-  max-width: 450px;
+-  max-height: 90vh;
+-  display: flex;
+-  flex-direction: column;
+-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+-  animation: slideUp 0.3s ease;
+-}
+-
+-@keyframes slideUp {
+-  from {
+-    transform: translateY(20px);
+-    opacity: 0;
+-  }
+-  to {
+-    transform: translateY(0);
+-    opacity: 1;
+-  }
+-}
+-
+-.modal-header {
+-  display: flex;
+-  justify-content: space-between;
+-  align-items: center;
+-  padding: 20px;
+-  border-bottom: 1px solid #eee;
+-}
+-
+-.modal-header h2 {
+-  margin: 0;
+-  font-size: 18px;
+-  color: #333;
+-}
+-
+-.close-btn {
+-  background: none;
+-  border: none;
+-  font-size: 24px;
+-  cursor: pointer;
+-  color: #666;
+-  transition: color 0.3s ease;
+-}
+-
+-.close-btn:hover {
+-  color: #333;
+-}
+-
+-.notification-form {
+-  padding: 20px;
+-  overflow-y: auto;
+-  flex: 1;
+-}
+-
+-.form-group {
+-  margin-bottom: 16px;
+-}
+-
+-.form-group label {
+-  display: block;
+-  margin-bottom: 6px;
+-  font-weight: 500;
+-  color: #333;
+-  font-size: 13px;
+-}
+-
+-.form-group input[type='text'],
+-.form-group textarea,
+-.form-group select {
+-  width: 100%;
+-  padding: 10px;
+-  border: 1px solid #ddd;
+-  border-radius: 4px;
+-  font-size: 13px;
+-  font-family: inherit;
+-  transition: border-color 0.3s ease;
+-}
+-
+-.form-group input[type='text']:focus,
+-.form-group textarea:focus,
+-.form-group select:focus {
+-  outline: none;
+-  border-color: #3B82F6;
+-  box-shadow: 0 0 0 2px rgba(59, 130, 204, 0.1);
+-}
+-
+-.form-group textarea {
+-  resize: vertical;
+-}
+-
+-.request-info {
+-  background-color: #f9f9f9;
+-  border: 1px solid #e5e7eb;
+-  border-radius: 4px;
+-  padding: 12px;
+-  margin-bottom: 16px;
+-}
+-
+-.request-info p {
+-  margin: 6px 0;
+-  font-size: 13px;
+-  color: #374151;
+-}
+-
+-.request-info strong {
+-  color: #1f2937;
+-}
+-
+-.error-message {
+-  background-color: #fee;
+-  border: 1px solid #fcc;
+-  color: #c33;
+-  padding: 10px;
+-  border-radius: 4px;
+-  margin-bottom: 12px;
+-  font-size: 13px;
+-}
+-
+-.form-actions {
+-  display: flex;
+-  gap: 10px;
+-  justify-content: flex-end;
+-  padding-top: 16px;
+-  border-top: 1px solid #eee;
+-}
+-
+-.btn {
+-  padding: 10px 18px;
+-  border: none;
+-  border-radius: 4px;
+-  font-size: 13px;
+-  cursor: pointer;
+-  font-weight: 500;
+-  transition: all 0.3s ease;
+-}
+-
+-.btn-cancel {
+-  background-color: #f0f0f0;
+-  color: #333;
+-}
+-
+-.btn-cancel:hover:not(:disabled) {
+-  background-color: #e0e0e0;
+-}
+-
+-.btn-primary {
+-  background-color: #3B82F6;
+-  color: white;
+-}
+-
+-.btn-primary:hover:not(:disabled) {
+-  background-color: #2563eb;
+-}
+-
+-.btn:disabled {
+-  opacity: 0.6;
+-  cursor: not-allowed;
+-}
+diff --git a/backend/app/Models/Notification.php b/backend/app/Models/Notification.php
+deleted file mode 100644
+index 7890123..0000000
+--- a/backend/app/Models/Notification.php
++++ /dev/null
+@@ -1,64 +0,0 @@
+-<?php
+-
+-namespace App\Models;
+-
+-use Illuminate\Database\Eloquent\Model;
+-
+-class Notification extends Model
+-{
+-    protected $fillable = [
+-        'user_id',
+-        'from_user_id',
+-        'request_id',
+-        'title',
+-        'message',
+-        'type',
+-        'read_at',
+-    ];
+-
+-    protected $casts = [
+-        'read_at' => 'datetime',
+-        'created_at' => 'datetime',
+-        'updated_at' => 'datetime',
+-    ];
+-
+-    /**
+-     * Get the user that received the notification
+-     */
+-    public function user()
+-    {
+-        return $this->belongsTo(User::class, 'user_id');
+-    }
+-
+-    /**
+-     * Get the user that sent the notification
+-     */
+-    public function sender()
+-    {
+-        return $this->belongsTo(User::class, 'from_user_id');
+-    }
+-
+-    /**
+-     * Get the related request
+-     */
+-    public function request()
+-    {
+-        return $this->belongsTo(Request::class);
+-    }
+-
+-    /**
+-     * Mark notification as read
+-     */
+-    public function markAsRead()
+-    {
+-        if (is_null($this->read_at)) {
+-            $this->update(['read_at' => now()]);
+-        }
+-    }
+-
+-    /**
+-     * Check if notification is unread
+-     */
+-    public function isUnread()
+-    {
+-        return is_null($this->read_at);
+-    }
+-}
+diff --git a/backend/app/Http/Controllers/NotificationController.php b/backend/app/Http/Controllers/NotificationController.php
+deleted file mode 100644
+index 8901234..0000000
+--- a/backend/app/Http/Controllers/NotificationController.php
++++ /dev/null
+@@ -1,209 +0,0 @@
+-<?php
+-
+-namespace App\Http\Controllers;
+-
+-use App\Models\Notification;
+-use App\Models\User;
+-use Illuminate\Http\Request;
+-
+-class NotificationController extends Controller
+-{
+-    /**
+-     * Get all notifications for the authenticated user
+-     */
+-    public function index()
+-    {
+-        $user = auth()->user();
+-        $notifications = Notification::where('user_id', $user->id)
+-            ->with(['sender', 'request'])
+-            ->orderBy('created_at', 'desc')
+-            ->get();
+-
+-        return response()->json($notifications);
+-    }
+-
+-    /**
+-     * Get unread notifications count
+-     */
+-    public function unreadCount()
+-    {
+-        $user = auth()->user();
+-        $count = Notification::where('user_id', $user->id)
+-            ->whereNull('read_at')
+-            ->count();
+-
+-        return response()->json(['unread_count' => $count]);
+-    }
+-
+-    /**
+-     * Get paginated notifications with filters
+-     */
+-    public function getNotifications(Request $request)
+-    {
+-        $user = auth()->user();
+-        $perPage = $request->query('per_page', 15);
+-        $type = $request->query('type'); // Filter by type
+-
+-        $query = Notification::where('user_id', $user->id)
+-            ->with(['sender', 'request']);
+-
+-        if ($type) {
+-            $query->where('type', $type);
+-        }
+-
+-        $notifications = $query->orderBy('created_at', 'desc')
+-            ->paginate($perPage);
+-
+-        return response()->json($notifications);
+-    }
+-
+-    /**
+-     * Mark a notification as read
+-     */
+-    public function markAsRead($id)
+-    {
+-        $notification = Notification::find($id);
+-
+-        if (!$notification) {
+-            return response()->json(['message' => 'Notification not found'], 404);
+-        }
+-
+-        if ($notification->user_id !== auth()->id()) {
+-            return response()->json(['message' => 'Unauthorized'], 403);
+-        }
+-
+-        $notification->markAsRead();
+-
+-        return response()->json($notification);
+-    }
+-
+-    /**
+-     * Mark all notifications as read
+-     */
+-    public function markAllAsRead()
+-    {
+-        $user = auth()->user();
+-        Notification::where('user_id', $user->id)
+-            ->whereNull('read_at')
+-            ->update(['read_at' => now()]);
+-
+-        return response()->json(['message' => 'All notifications marked as read']);
+-    }
+-
+-    /**
+-     * Send notification to a customer (HOD/CS only)
+-     */
+-    public function send(Request $request)
+-    {
+-        $user = auth()->user();
+-
+-        // Only HOD and Customer Service can send notifications
+-        if (!($user->isCustomerService() || $user->isHODSanitation())) {
+-            return response()->json(['message' => 'Unauthorized'], 403);
+-        }
+-
+-        $validated = $request->validate([
+-            'user_id' => 'required|exists:users,id',
+-            'request_id' => 'nullable|exists:requests,id',
+-            'title' => 'required|string|max:255',
+-            'message' => 'required|string',
+-            'type' => 'sometimes|string|in:status_update,general,alert,reminder',
+-        ]);
+-
+-        // Ensure the target user is a customer
+-        $targetUser = User::find($validated['user_id']);
+-        if (!$targetUser || !$targetUser->isCustomer()) {
+-            return response()->json(['message' => 'Invalid customer'], 422);
+-        }
+-
+-        $notification = Notification::create([
+-            'user_id' => $validated['user_id'],
+-            'from_user_id' => $user->id,
+-            'request_id' => $validated['request_id'] ?? null,
+-            'title' => $validated['title'],
+-            'message' => $validated['message'],
+-            'type' => $validated['type'] ?? 'general',
+-        ]);
+-
+-        return response()->json($notification, 201);
+-    }
+-
+-    /**
+-     * Send bulk notifications to multiple customers
+-     */
+-    public function sendBulk(Request $request)
+-    {
+-        $user = auth()->user();
+-
+-        // Only HOD and Customer Service can send notifications
+-        if (!($user->isCustomerService() || $user->isHODSanitation())) {
+-            return response()->json(['message' => 'Unauthorized'], 403);
+-        }
+-
+-        $validated = $request->validate([
+-            'user_ids' => 'required|array|min:1',
+-            'user_ids.*' => 'exists:users,id',
+-            'title' => 'required|string|max:255',
+-            'message' => 'required|string',
+-            'type' => 'sometimes|string|in:status_update,general,alert,reminder',
+-        ]);
+-
+-        $notifications = [];
+-        foreach ($validated['user_ids'] as $customerId) {
+-            $targetUser = User::find($customerId);
+-            if ($targetUser && $targetUser->isCustomer()) {
+-                $notification = Notification::create([
+-                    'user_id' => $customerId,
+-                    'from_user_id' => $user->id,
+-                    'title' => $validated['title'],
+-                    'message' => $validated['message'],
+-                    'type' => $validated['type'] ?? 'general',
+-                ]);
+-                $notifications[] = $notification;
+-            }
+-        }
+-
+-        return response()->json(['created' => count($notifications), 'notifications' => $notifications], 201);
+-    }
+-
+-    /**
+-     * Delete a notification
+-     */
+-    public function destroy($id)
+-    {
+-        $notification = Notification::find($id);
+-
+-        if (!$notification) {
+-            return response()->json(['message' => 'Notification not found'], 404);
+-        }
+-
+-        if ($notification->user_id !== auth()->id()) {
+-            return response()->json(['message' => 'Unauthorized'], 403);
+-        }
+-
+-        $notification->delete();
+-
+-        return response()->json(['message' => 'Notification deleted']);
+-    }
+-}
+diff --git a/backend/database/migrations/2026_06_17_000001_create_notifications_table.php b/backend/database/migrations/2026_06_17_000001_create_notifications_table.php
+deleted file mode 100644
+index 9012345..0000000
+--- a/backend/database/migrations/2026_06_17_000001_create_notifications_table.php
++++ /dev/null
+@@ -1,42 +0,0 @@
+-<?php
+-
+-use Illuminate\Database\Migrations\Migration;
+-use Illuminate\Database\Schema\Blueprint;
+-use Illuminate\Support\Facades\Schema;
+-
+-return new class extends Migration
+-{
+-    /**
+-     * Run the migrations.
+-     */
+-    public function up(): void
+-    {
+-        Schema::create('notifications', function (Blueprint $table) {
+-            $table->id();
+-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Customer receiving the notification
+-            $table->foreignId('from_user_id')->constrained('users')->onDelete('cascade'); // HOD or CS sending the notification
+-            $table->foreignId('request_id')->nullable()->constrained()->onDelete('cascade'); // Related request (optional)
+-            $table->string('title');
+-            $table->text('message');
+-            $table->string('type')->default('general'); // 'status_update', 'general', 'alert', 'reminder'
+-            $table->timestamp('read_at')->nullable();
+-            $table->timestamps();
+-        });
+-    }
+-
+-    /**
+-    * Reverse the migrations.
+-     */
+-    public function down(): void
+-    {
+-        Schema::dropIfExists('notifications');
+-    }
+-};

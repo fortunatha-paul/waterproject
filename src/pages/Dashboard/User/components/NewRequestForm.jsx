@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 
-const SERVICE_TYPES = ['New Connection', 'Repair', 'Complaint', 'Meter Replacement', 'Remove Sewage Water','No Water Supply', 'Other'];
+const SERVICE_TYPES = ['New Connection', 'Repair', 'Complaint', 'Meter Replacement', 'Remove Sewage Water', 'No Water Supply', 'Other'];
 
 export default function NewRequestForm({ onClose, onSubmit }) {
   const [form, setForm] = useState({ serviceType: '', description: '', location: '', image: null });
+  const [applicationForm, setApplicationForm] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -11,6 +12,16 @@ export default function NewRequestForm({ onClose, onSubmit }) {
     const { name, value, files } = e.target;
     setForm((prev) => ({ ...prev, [name]: files ? files[0] : value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  const handlePDFChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type !== 'application/pdf') {
+      setErrors((prev) => ({ ...prev, applicationForm: 'Please upload a PDF file only' }));
+      return;
+    }
+    setApplicationForm(file);
+    if (errors.applicationForm) setErrors((prev) => ({ ...prev, applicationForm: '' }));
   };
 
   const handleGetLocation = () => {
@@ -30,6 +41,9 @@ export default function NewRequestForm({ onClose, onSubmit }) {
     if (!form.serviceType) e.serviceType = 'Please select a service type';
     if (!form.description.trim()) e.description = 'Please describe your issue';
     if (!form.location.trim()) e.location = 'Please provide a location';
+    if ((form.serviceType === 'New Connection' || form.serviceType === 'Remove Sewage Water') && !applicationForm) {
+      e.applicationForm = 'Please upload your application form (PDF)';
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -39,7 +53,7 @@ export default function NewRequestForm({ onClose, onSubmit }) {
     if (!validate()) return;
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 800));
-    onSubmit(form);
+    onSubmit({ ...form, applicationForm });
     setSubmitting(false);
   };
 
@@ -61,6 +75,7 @@ export default function NewRequestForm({ onClose, onSubmit }) {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* Service Type */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
               Service Type *
@@ -77,6 +92,45 @@ export default function NewRequestForm({ onClose, onSubmit }) {
             {errors.serviceType && <span style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>{errors.serviceType}</span>}
           </div>
 
+          {/* PDF Upload - New Connection only */}
+          {(form.serviceType === 'New Connection' || form.serviceType === 'Remove Sewage Water') && (
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                Application Form (PDF) *
+              </label>
+              <div style={{
+                border: errors.applicationForm ? '2px dashed #EF4444' : '2px dashed #3B82F6',
+                borderRadius: 8, padding: '20px', textAlign: 'center', background: '#F0F9FF',
+                cursor: 'pointer',
+              }}>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handlePDFChange}
+                  style={{ display: 'none' }}
+                  id="pdf-upload"
+                />
+                <label htmlFor="pdf-upload" style={{ cursor: 'pointer' }}>
+                  {applicationForm ? (
+                    <div>
+                      <div style={{ fontSize: 24, marginBottom: 8 }}>📄</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1D4ED8' }}>{applicationForm.name}</div>
+                      <div style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>Click to change file</div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ fontSize: 32, marginBottom: 8 }}>📤</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1D4ED8' }}>Click to upload PDF</div>
+                      <div style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>Upload your AUWSA application form (PDF only)</div>
+                    </div>
+                  )}
+                </label>
+              </div>
+              {errors.applicationForm && <span style={{ fontSize: 12, color: '#EF4444', marginTop: 4, display: 'block' }}>{errors.applicationForm}</span>}
+            </div>
+          )}
+
+          {/* Description */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
               Describe Issue *
@@ -91,6 +145,7 @@ export default function NewRequestForm({ onClose, onSubmit }) {
             {errors.description && <span style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>{errors.description}</span>}
           </div>
 
+          {/* Location */}
           <div style={{ marginBottom: 24 }}>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
               Location *

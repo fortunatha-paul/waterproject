@@ -2,7 +2,6 @@
 //import ReportsViewer from '../../components/ReportsViewer';
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
-import DepartmentReportsView from '../components/DepartmentReportsView';
 
 const API_URL = "http://localhost:8000/api";
 
@@ -166,6 +165,9 @@ function RequestDetailsModal({
     request.assigned_inspector_id || "",
   );
   const [isUpdating, setIsUpdating] = useState(false);
+  const [inspectorReport, setInspectorReport] = useState(null);
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [showReportDetails, setShowReportDetails] = useState(false);
 
   const handleUpdate = async () => {
     try {
@@ -194,6 +196,36 @@ function RequestDetailsModal({
       console.error("Error assigning inspector:", error);
     }
   };
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchInspectorReport = async () => {
+      if (!request?.id) return;
+        try {
+          setLoadingReport(true);
+          const token = localStorage.getItem('auth_token');
+          const res = await fetch(`${API_URL}/inspector-reports`, {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+              Accept: 'application/json',
+            },
+          });
+          if (!res.ok) throw new Error('Failed to fetch reports');
+          const data = await res.json();
+          if (!mounted) return;
+          const reqId = typeof request.id === 'string' && request.id.startsWith('REQ-') ? parseInt(request.id.replace('REQ-', ''), 10) : request.id;
+          const found = Array.isArray(data) ? data.find(r => r.request_id === reqId || r.request_id === Number(reqId)) : null;
+          setInspectorReport(found || null);
+      } catch (err) {
+        console.warn('Error fetching inspector report', err);
+        setInspectorReport(null);
+      } finally {
+        if (mounted) setLoadingReport(false);
+      }
+    };
+    fetchInspectorReport();
+    return () => { mounted = false; };
+  }, [request?.id]);
 
   return (
     <div
@@ -340,6 +372,67 @@ function RequestDetailsModal({
           </div>
         </div>
       </div>
+
+      {inspectorReport && (
+        <div style={{ marginBottom: 24 }}>
+          {!showReportDetails ? (
+            <button
+              onClick={() => setShowReportDetails(true)}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 8,
+                border: 'none',
+                background: '#3B82F6',
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Show Inspector Report
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowReportDetails(false)}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 8,
+                border: '1px solid #d1d5db',
+                background: '#fff',
+                color: '#374151',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Hide Inspector Report
+            </button>
+          )}
+        </div>
+      )}
+      {showReportDetails && inspectorReport && (
+        <div style={{ marginBottom: 24, background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '18px 20px' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1f2937', margin: '0 0 12px' }}>Inspector Report</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b7280' }}>Title</span><strong style={{ color: '#1f2937' }}>{inspectorReport.title}</strong></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b7280' }}>Inspector</span><span style={{ color: '#1f2937' }}>{inspectorReport.inspector?.name || 'Unknown'}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b7280' }}>Visit Date</span><span style={{ color: '#1f2937' }}>{inspectorReport.visit_date}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b7280' }}>Status</span><span style={{ color: '#1f2937' }}>{inspectorReport.status}</span></div>
+            <div style={{ padding: '10px', background: '#F0F9FF', borderRadius: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#1E40AF', marginBottom: 4 }}>Findings</div>
+              <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{inspectorReport.findings}</div>
+            </div>
+            <div style={{ padding: '10px', background: '#F0F9FF', borderRadius: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#1E40AF', marginBottom: 4 }}>Work Done</div>
+              <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{inspectorReport.work_done}</div>
+            </div>
+            <div style={{ padding: '10px', background: '#F0F9FF', borderRadius: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#1E40AF', marginBottom: 4 }}>Recommendations</div>
+              <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{inspectorReport.recommendations}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ marginBottom: 24 }}>
         <label

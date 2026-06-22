@@ -9,6 +9,7 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
   const [fresh, setFresh] = useState(request);
   const [inspectorReport, setInspectorReport] = useState(null);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [showReportDetails, setShowReportDetails] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -39,16 +40,18 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
 
   useEffect(() => {
     const fetchInspectorReport = async () => {
+      setInspectorReport(null);
+      setShowReportDetails(false);
       if (!fresh?.id) return;
       try {
         setLoadingReport(true);
+        const reqId = typeof fresh.id === 'string' && fresh.id.startsWith('REQ-') ? parseInt(fresh.id.replace('REQ-', ''), 10) : fresh.id;
         const reports = await api.getInspectorReports();
-        const report = reports.find(r => r.request_id === fresh.id);
-        if (report) {
-          setInspectorReport(report);
-        }
+        const report = Array.isArray(reports) ? reports.find(r => r.request_id === reqId || r.request_id === Number(reqId)) : null;
+        setInspectorReport(report || null);
       } catch (err) {
         console.warn('Failed to fetch inspector report:', err);
+        setInspectorReport(null);
       } finally {
         setLoadingReport(false);
       }
@@ -193,11 +196,46 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
                 )}
             </Section>
 
-            {/* Inspector Report */}
-            <Section title="Inspector Report">
-              {loadingReport ? (
-                <div style={{ fontSize: 13, color: '#9CA3AF' }}>Loading report...</div>
-              ) : inspectorReport ? (
+            {inspectorReport && (
+              <div style={{ marginBottom: 24, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                {!showReportDetails ? (
+                  <button
+                    onClick={() => setShowReportDetails(true)}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: '#3B82F6',
+                      color: '#fff',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Show Inspector Report
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowReportDetails(false)}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: 8,
+                      border: '1px solid #d1d5db',
+                      background: '#fff',
+                      color: '#374151',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Hide Inspector Report
+                  </button>
+                )}
+              </div>
+            )}
+
+            {showReportDetails && inspectorReport && (
+              <Section title="Inspector Report">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <InfoRow label="Title" value={inspectorReport.title} />
                   <InfoRow label="Inspector" value={inspectorReport.inspector?.name || 'Unknown'} />
@@ -233,10 +271,8 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
                     <InfoRow label="Estimated Cost" value={`TSH ${inspectorReport.estimated_cost}`} />
                   )}
                 </div>
-              ) : (
-                <span style={{ fontSize: 13, color: '#9CA3AF' }}>No inspector report submitted yet</span>
-              )}
-            </Section>
+              </Section>
+            )}
 
             {/* Timeline */}
             <Section title="Timeline (Status History)">
