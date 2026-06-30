@@ -46,8 +46,8 @@ export default function RequestDetails({ request, onBack, onAssign, onStatusChan
       try {
         setLoadingReport(true);
         const reqId = typeof fresh.id === 'string' && fresh.id.startsWith('REQ-') ? parseInt(fresh.id.replace('REQ-', ''), 10) : fresh.id;
-        const reports = await api.getInspectorReports();
-        const report = Array.isArray(reports) ? reports.find(r => r.request_id === reqId || r.request_id === Number(reqId)) : null;
+        const reports = await api.getInspectorReports({ request_id: reqId });
+        const report = Array.isArray(reports) ? reports[0] : null;
         setInspectorReport(report || null);
       } catch (err) {
         console.warn('Failed to fetch inspector report:', err);

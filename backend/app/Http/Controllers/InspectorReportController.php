@@ -15,22 +15,20 @@ class InspectorReportController extends Controller
      * - Customer Service:  sees all reports
      * - Finance:           sees all reports (with billing info)
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
+        $query = InspectorReport::with(['inspector', 'request'])->orderByDesc('created_at');
  
-        if ($user->isInspector()) {
-            $reports = InspectorReport::with(['inspector', 'request'])
-                ->where('inspector_id', $user->id)
-                ->orderByDesc('created_at')
-                ->get();
-        } else {
-            // HOD Sanitation, Customer Service, Finance all see everything
-            $reports = InspectorReport::with(['inspector', 'request'])
-                ->orderByDesc('created_at')
-                ->get();
+        if ($request->query('request_id')) {
+            $query->where('request_id', $request->query('request_id'));
         }
  
+        if ($user->isInspector()) {
+            $query->where('inspector_id', $user->id);
+        }
+ 
+        $reports = $query->get();
         return response()->json($reports);
     }
  

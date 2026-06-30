@@ -39,7 +39,10 @@ export const api = {
   getRequests: () => apiRequest('/requests'),
   getRequest: (id) => apiRequest(`/requests/${id}`),
   // Inspector reports
-  getInspectorReports: () => apiRequest('/inspector-reports'),
+  getInspectorReports: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/inspector-reports${queryString ? `?${queryString}` : ''}`);
+  },
   getInspectorReport: (id) => apiRequest(`/inspector-reports/${id}`),
   createRequest: (requestData) => apiRequest('/requests', {
     method: 'POST',

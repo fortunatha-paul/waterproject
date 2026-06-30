@@ -25,10 +25,7 @@ Route::get('/users/{id}', [UserController::class, 'show'])->middleware('auth:san
 Route::put('/users/{id}', [UserController::class, 'update'])->middleware('auth:sanctum');
 Route::delete('/users/{id}', [UserController::class, 'destroy'])->middleware('auth:sanctum');
 Route::put('/users/{id}/reset-password', [UserController::class, 'resetPassword'])->middleware('auth:sanctum');
-
-Route::get('/inspectors', function (Request $request) {
-    return app(UserController::class)->index(new Request(['role' => 'inspector']));
-})->middleware('auth:sanctum');
+Route::get('/inspectors', [UserController::class, 'inspectors'])->middleware('auth:sanctum');
 
 // Inspector Reports — visible to Inspector (own), HOD Sanitation, Customer Service, Finance
 Route::apiResource('inspector-reports', InspectorReportController::class)->middleware('auth:sanctum');

@@ -20,7 +20,7 @@ class UserController extends Controller
             $query->where('role', $request->role);
         }
         
-        $users = $query->select('id', 'name', 'email', 'phone_number', 'role', 'created_at')->get();
+        $users = $query->select('id', 'name', 'email', 'phone_number', 'nida', 'house_number', 'district', 'ward', 'role', 'created_at')->get();
         
         return response()->json($users);
     }
@@ -40,7 +40,10 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
             'phone_number' => 'nullable|string|max:20',
-            'nida' => 'nullable|string|max:20',
+            'nida' => 'nullable|string|max:20|unique:users,nida',
+            'house_number' => 'required|string|max:100',
+            'district' => 'required|string|max:100',
+            'ward' => 'required|string|max:100',
             'role' => 'required|string|in:customer,customer_service,inspector,hod_sanitation,finance,md',
         ]);
 
@@ -50,6 +53,9 @@ class UserController extends Controller
             'password' => Hash::make($validated['password']),
             'phone_number' => $validated['phone_number'] ?? null,
             'nida' => $validated['nida'] ?? null,
+            'house_number' => $validated['house_number'],
+            'district' => $validated['district'],
+            'ward' => $validated['ward'],
             'role' => $validated['role'],
         ]);
 
@@ -70,7 +76,7 @@ class UserController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
-        return response()->json($user->only(['id', 'name', 'email', 'phone_number', 'nida', 'role', 'created_at']));
+        return response()->json($user->only(['id', 'name', 'email', 'phone_number', 'nida', 'house_number', 'district', 'ward', 'role', 'created_at']));
     }
 
     /**
@@ -89,13 +95,30 @@ class UserController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
-        $validated = $request->validate([
+        // If the target user is the HOD departmental account, restrict changes: only allow name, phone_number, nida.
+        $isHodDept = $user->role === 'hod_sanitation';
+
+        $rules = [
             'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $id,
             'phone_number' => 'nullable|string|max:20',
-            'nida' => 'nullable|string|max:20',
-            'role' => 'sometimes|required|string|in:customer,customer_service,inspector,hod_sanitation,finance,md',
-        ]);
+            'nida' => 'nullable|string|max:20|unique:users,nida,' . $id,
+            'house_number' => 'sometimes|required|string|max:100',
+            'district' => 'sometimes|required|string|max:100',
+            'ward' => 'sometimes|required|string|max:100',
+        ];
+
+        if (!$isHodDept) {
+            $rules['email'] = 'sometimes|required|string|email|max:255|unique:users,email,' . $id;
+            $rules['role'] = 'sometimes|required|string|in:customer,customer_service,inspector,hod_sanitation,finance,md';
+        }
+
+        $validated = $request->validate($rules);
+
+        // Prevent changing email/role for the HOD departmental account even if sent
+        if ($isHodDept) {
+            unset($validated['email']);
+            unset($validated['role']);
+        }
 
         $user->update($validated);
 
@@ -147,6 +170,11 @@ class UserController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
+        // Prevent resetting password for departmental HOD account
+        if ($user->role === 'hod_sanitation') {
+            return response()->json(['error' => 'Cannot reset password for departmental HOD account.'], 403);
+        }
+
         $validated = $request->validate([
             'password' => 'required|string|min:6',
         ]);
@@ -156,5 +184,17 @@ class UserController extends Controller
         ]);
 
         return response()->json(['message' => 'Password reset successfully']);
+    }
+
+    /**
+     * Return only inspector users.
+     */
+    public function inspectors()
+    {
+        $inspectors = User::where('role', 'inspector')
+            ->select('id', 'name', 'email', 'phone_number', 'role', 'created_at')
+            ->get();
+
+        return response()->json($inspectors);
     }
 }

@@ -2,6 +2,7 @@
 //import ReportsViewer from '../../components/ReportsViewer';
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
+import { api } from '../../../utils/api';
 
 const API_URL = "http://localhost:8000/api";
 
@@ -201,24 +202,16 @@ function RequestDetailsModal({
     let mounted = true;
     const fetchInspectorReport = async () => {
       if (!request?.id) return;
-        try {
-          setLoadingReport(true);
-          const token = localStorage.getItem('auth_token');
-          const res = await fetch(`${API_URL}/inspector-reports`, {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : undefined,
-              Accept: 'application/json',
-            },
-          });
-          if (!res.ok) throw new Error('Failed to fetch reports');
-          const data = await res.json();
-          if (!mounted) return;
-          const reqId = typeof request.id === 'string' && request.id.startsWith('REQ-') ? parseInt(request.id.replace('REQ-', ''), 10) : request.id;
-          const found = Array.isArray(data) ? data.find(r => r.request_id === reqId || r.request_id === Number(reqId)) : null;
-          setInspectorReport(found || null);
+      try {
+        setLoadingReport(true);
+        const reqId = typeof request.id === 'string' && request.id.startsWith('REQ-') ? parseInt(request.id.replace('REQ-', ''), 10) : request.id;
+        const reports = await api.getInspectorReports({ request_id: reqId });
+        if (!mounted) return;
+        const found = Array.isArray(reports) ? reports[0] : null;
+        setInspectorReport(found || null);
       } catch (err) {
         console.warn('Error fetching inspector report', err);
-        setInspectorReport(null);
+        if (mounted) setInspectorReport(null);
       } finally {
         if (mounted) setLoadingReport(false);
       }
