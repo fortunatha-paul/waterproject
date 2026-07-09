@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { api } from '../../../../utils/api';
 
 const SERVICE_TYPES = ['New Connection', 'Repair', 'Complaint', 'Meter Replacement', 'Remove Sewage Water', 'No Water Supply', 'Other'];
 
@@ -7,6 +8,7 @@ export default function NewRequestForm({ onClose, onSubmit }) {
   const [applicationForm, setApplicationForm] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -24,15 +26,25 @@ export default function NewRequestForm({ onClose, onSubmit }) {
     if (errors.applicationForm) setErrors((prev) => ({ ...prev, applicationForm: '' }));
   };
 
-  const handleGetLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const loc = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
-          setForm((prev) => ({ ...prev, location: loc }));
-        },
-        () => setForm((prev) => ({ ...prev, location: 'Location unavailable' }))
-      );
+  const handleGetLocation = async () => {
+    setDetectingLocation(true);
+    setErrors((prev) => ({ ...prev, location: '' }));
+
+    try {
+      const user = await api.getCurrentUser();
+      
+      if (user && (user.ward || user.district)) {
+        const locationParts = [user.ward, user.district].filter(Boolean);
+        const location = locationParts.join(', ');
+        setForm((prev) => ({ ...prev, location }));
+      } else {
+        setErrors((prev) => ({ ...prev, location: 'No registered location found in your profile' }));
+      }
+    } catch (error) {
+      console.error('Error fetching registered location:', error);
+      setErrors((prev) => ({ ...prev, location: 'Could not fetch your registered location. Please enter manually.' }));
+    } finally {
+      setDetectingLocation(false);
     }
   };
 
@@ -157,12 +169,13 @@ export default function NewRequestForm({ onClose, onSubmit }) {
                   border: errors.location ? '1px solid #EF4444' : '1px solid #D1D5DB',
                   fontSize: 14, boxSizing: 'border-box', outline: 'none',
                 }} />
-              <button type="button" onClick={handleGetLocation} style={{
+              <button type="button" onClick={handleGetLocation} disabled={detectingLocation} style={{
                 padding: '10px 16px', borderRadius: 8, border: '1px solid #3B82F6',
-                background: '#EFF6FF', color: '#3B82F6', fontSize: 13, fontWeight: 600,
-                cursor: 'pointer', whiteSpace: 'nowrap',
+                background: detectingLocation ? '#DBEAFE' : '#EFF6FF', color: '#3B82F6', fontSize: 13, fontWeight: 600,
+                cursor: detectingLocation ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap',
+                opacity: detectingLocation ? 0.7 : 1,
               }}>
-                Auto Detect
+                {detectingLocation ? 'Loading...' : 'Auto Fill'}
               </button>
             </div>
             {errors.location && <span style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>{errors.location}</span>}

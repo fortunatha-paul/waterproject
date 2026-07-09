@@ -25,33 +25,43 @@ export default function UserDashboard() {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [updatedRequests, setUpdatedRequests] = useState(new Set());
+  const [statusFilter, setStatusFilter] = useState('All');
+
+  const statusFilterMap = {
+    pending: ['Pending', 'Submitted', 'Reviewed', 'Assigned'],
+    inProgress: ['In Progress'],
+    completed: ['Completed'],
+  };
 
   // Initialize dashboard state manager
   const [stateManager] = useState(() => new DashboardStateManager('user'));
+
+  const transformRequest = (req) => ({
+    id: `REQ-${String(req.id).padStart(3, '0')}`,
+    serviceType: req.serve_type,
+    date: new Date(req.created_at).toISOString().split('T')[0],
+    status: req.status || 'Pending',
+    inspectorStatus: req.inspectorStatus || 'Not Solved',
+    description: req.description,
+    location: req.location,
+    assignedInspector: req.assigned_staff || (req.assigned_inspector_id ? 'Inspector assigned' : null),
+    assignedInspectorId: req.assigned_inspector_id || null,
+    technician: req.assigned_staff || (req.assigned_inspector_id ? 'Inspector assigned' : null),
+    expectedCompletion: req.deadline,
+    stage: req.status === 'Completed' ? 5 : req.status === 'In Progress' ? 4 : req.status === 'Assigned' ? 3 : req.status === 'Approved' ? 2 : req.status === 'Reviewed' ? 1 : 0,
+    rejection_reason: req.rejection_reason || null,
+    application_form: req.application_form || null,
+    priority: req.priority || 'Medium',
+    comments: Array.isArray(req.comments) ? req.comments : [],
+    timeline: Array.isArray(req.timeline) ? req.timeline : [],
+  });
 
   // Fetch requests from API
   const fetchRequests = async () => {
     try {
       const response = await axios.get(`${API_URL}/requests`);
       // Transform API response to match frontend format
-      const transformedRequests = response.data.map(req => ({
-        id: `REQ-${String(req.id).padStart(3, '0')}`,
-        serviceType: req.serve_type,
-        date: new Date(req.created_at).toISOString().split('T')[0],
-        status: req.status || 'Pending',
-        inspectorStatus: req.inspectorStatus || 'Not Solved',
-        description: req.description,
-        location: req.location,
-        technician: req.assigned_staff,
-        expectedCompletion: req.deadline,
-        //stage: req.status === 'Completed' ? 4 : req.status === 'In Progress' ? 3 : (req.status === 'Pending' || req.status === 'Submitted') ? 2 : 1,
-        stage: req.status === 'Completed' ? 5 : req.status === 'In Progress' ? 4 : req.status === 'Assigned' ? 3 : req.status === 'Approved' ? 2 : req.status === 'Reviewed' ? 1 : 0,
-        rejection_reason: req.rejection_reason || null,
-        application_form: req.application_form || null,
-        priority: req.priority || 'Medium',
-        comments: Array.isArray(req.comments) ? req.comments : [],
-        timeline: Array.isArray(req.timeline) ? req.timeline : [],
-      }));
+      const transformedRequests = response.data.map(transformRequest);
 
       // Check for inspector status changes
       const newUpdatedRequests = new Set();
@@ -100,9 +110,31 @@ export default function UserDashboard() {
   }, [stateManager]);
 
   const total = requests.length;
-  const pending = requests.filter((r) => r.status === 'Pending' || r.status === 'Submitted').length;
-  const inProgress = requests.filter((r) => r.status === 'In Progress').length;
-  const completed = requests.filter((r) => r.status === 'Completed').length;
+  const pending = requests.filter((r) => statusFilterMap.pending.includes(r.status)).length;
+  const inProgress = requests.filter((r) => statusFilterMap.inProgress.includes(r.status)).length;
+  const completed = requests.filter((r) => statusFilterMap.completed.includes(r.status)).length;
+  const filteredRequests = statusFilter === 'All'
+    ? requests
+    : requests.filter((r) => statusFilterMap[statusFilter]?.includes(r.status));
+
+  const fetchRequestById = async (req) => {
+    try {
+      configureAxios();
+      const requestId = typeof req.id === 'string' && req.id.startsWith('REQ-')
+        ? req.id.replace('REQ-', '')
+        : req.id;
+      const response = await axios.get(`${API_URL}/requests/${requestId}`);
+      return transformRequest(response.data);
+    } catch (error) {
+      console.error('Error fetching request details:', error);
+      return req;
+    }
+  };
+
+  const handleView = async (req) => {
+    const freshRequest = await fetchRequestById(req);
+    setSelectedRequest(freshRequest);
+  };
 
  const handleNewRequest = async (form) => {
     setLoading(true);
@@ -146,11 +178,10 @@ export default function UserDashboard() {
   }, [requests, showForm, selectedRequest, successMsg, loading, stateManager]);
 
  if (selectedRequest) {
-    const freshRequest = requests.find(r => r.id === selectedRequest.id) || selectedRequest;
     return (
       <div style={{ minHeight: '100vh', background: '#F9FAFB', padding: '24px 32px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <RequestDetails request={freshRequest} onBack={() => setSelectedRequest(null)} />
+          <RequestDetails request={selectedRequest} onBack={() => setSelectedRequest(null)} />
         </div>
       </div>
     );
@@ -317,11 +348,59 @@ export default function UserDashboard() {
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 32,
         }}>
-          <SummaryCard icon="📄" label="Total Requests" value={total} color="#6366F1" />
-          <SummaryCard icon="⏳" label="Pending Requests" value={pending} color="#F59E0B" />
-          <SummaryCard icon="🔧" label="In Progress" value={inProgress} color="#3B82F6" />
-          <SummaryCard icon="✅" label="Completed" value={completed} color="#10B981" />
+          <SummaryCard
+            icon="📄"
+            label="Total Requests"
+            value={total}
+            color="#6366F1"
+            onClick={() => setStatusFilter('All')}
+            active={statusFilter === 'All'}
+          />
+          <SummaryCard
+            icon="⏳"
+            label="Pending Requests"
+            value={pending}
+            color="#F59E0B"
+            onClick={() => setStatusFilter('pending')}
+            active={statusFilter === 'pending'}
+          />
+          <SummaryCard
+            icon="🔧"
+            label="In Progress"
+            value={inProgress}
+            color="#3B82F6"
+            onClick={() => setStatusFilter('inProgress')}
+            active={statusFilter === 'inProgress'}
+          />
+          <SummaryCard
+            icon="✅"
+            label="Completed"
+            value={completed}
+            color="#10B981"
+            onClick={() => setStatusFilter('completed')}
+            active={statusFilter === 'completed'}
+          />
         </div>
+        {statusFilter !== 'All' && (
+          <div style={{ marginBottom: 20, fontSize: 13, color: '#4B5563' }}>
+            Showing <strong>{statusFilter === 'pending' ? 'Pending / Submitted / Reviewed / Assigned' : statusFilter === 'inProgress' ? 'In Progress' : 'Completed'}</strong> requests.
+            <button
+              onClick={() => setStatusFilter('All')}
+              style={{
+                marginLeft: 12,
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: '1px solid #D1D5DB',
+                background: '#F9FAFB',
+                color: '#374151',
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
 
         {/* Recent Requests */}
         <div style={{
@@ -336,7 +415,7 @@ export default function UserDashboard() {
               Recent Requests
             </h2>
             <span style={{ fontSize: 13, color: '#9CA3AF' }}>
-              {requests.length} request{requests.length !== 1 ? 's' : ''}
+              {filteredRequests.length} request{filteredRequests.length !== 1 ? 's' : ''}
             </span>
           </div>
 
@@ -344,7 +423,7 @@ export default function UserDashboard() {
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
               <thead>
                 <tr style={{ background: '#F9FAFB' }}>
-                  {['Request ID', 'Service Type', 'Date Submitted', 'Status', 'Action'].map((h) => (
+                  {['Request ID', 'Service Type', 'Date Submitted', 'Status', 'Inspector Status', 'Action'].map((h) => (
                     <th key={h} style={{
                       padding: '12px 20px', textAlign: 'left', fontSize: 12,
                       fontWeight: 600, color: '#6b7280', textTransform: 'uppercase',
@@ -356,7 +435,7 @@ export default function UserDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {requests.map((req) => (
+                {filteredRequests.map((req) => (
                   <tr key={req.id} style={{
                     borderBottom: '1px solid #f0f0f0',
                     transition: 'background 0.15s',
@@ -382,7 +461,7 @@ export default function UserDashboard() {
                       <StatusBadge status={req.inspectorStatus} />
                     </td>
                     <td style={{ padding: '14px 20px' }}>
-                      <button onClick={() => setSelectedRequest(req)} style={{
+                      <button onClick={() => handleView(req)} style={{
                         padding: '6px 14px', borderRadius: 6, border: '1px solid #3B82F6',
                         background: '#EFF6FF', color: '#3B82F6', fontSize: 13, fontWeight: 600,
                         cursor: 'pointer', transition: 'all 0.2s',

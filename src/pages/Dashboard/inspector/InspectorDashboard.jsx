@@ -93,6 +93,10 @@ function ServiceRequestDetails({ inspection, onBack, onUpdateStatus, onWriteRepo
           <div style={{ fontSize: 16, color: '#1f2937', marginTop: 4 }}>{inspection.user ? inspection.user.name : 'N/A'}</div>
         </div>
         <div>
+          <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Phone Number</label>
+          <div style={{ fontSize: 16, color: '#1f2937', marginTop: 4 }}>{inspection.user ? inspection.user.phone_number : 'N/A'}</div>
+        </div>
+        <div>
           <label style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Address</label>
           <div style={{ fontSize: 16, color: '#1f2937', marginTop: 4 }}>{inspection.propertyAddress}</div>
         </div>

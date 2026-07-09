@@ -54,9 +54,11 @@ export default function RequestDetails({ request, onBack }) {
             <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Date Submitted</div>
             <div style={{ fontSize: 14, color: '#374151' }}>{request.date}</div>
           </div>
-          <div>
-            <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Assigned Technician</div>
-            <div style={{ fontSize: 14, color: '#374151' }}>{request.technician || 'Not yet assigned'}</div>
+             <div>
+            <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Assigned Inspector</div>
+            <div style={{ fontSize: 14, color: '#374151' }}>
+              {request.assignedInspector || (request.status === 'Assigned' || request.assignedInspectorId ? 'Inspector assigned' : 'No inspector assigned yet')}
+            </div>
           </div>
           <div>
             <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Expected Completion</div>
