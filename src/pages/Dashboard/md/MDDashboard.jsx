@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import axios from 'axios';
+import MDReportViewer from './components/MDReportViewer';
 
 const API_URL = 'http://localhost:8000/api';
 
@@ -54,6 +55,7 @@ export default function MDDashboard() {
   const [requests, setRequests] = useState([]);
   const [reports, setReports] = useState([]);
   const [users, setUsers] = useState([]);
+  const [viewReport, setViewReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deptFilter, setDeptFilter] = useState('All');
   const [roleFilter, setRoleFilter] = useState('All');
@@ -71,6 +73,7 @@ export default function MDDashboard() {
     role: 'customer',
   });
   const [selectedUser, setSelectedUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('Requests');
 
   useEffect(function() {
     configureAxios();
@@ -241,38 +244,45 @@ export default function MDDashboard() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ background: '#fff', borderBottom: '2px solid #E5E7EB', padding: '0 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ padding: '16px 0' }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#1f2937' }}>Water Project Management</div>
-          <div style={{ fontSize: 13, color: '#6B7280' }}>Manage users, requests, and reports in a single dashboard.</div>
+      {/* Tabs header */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #E5E7EB', padding: '0 48px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0' }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#1f2937' }}>Water Project Management</div>
+            <div style={{ fontSize: 13, color: '#6B7280' }}>Manage users, requests, and reports in a single dashboard.</div>
+          </div>
+          <button onClick={fetchAll} style={{ padding: '10px 18px', border: '1px solid #D1D5DB', borderRadius: 8, background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
+            🔄 Refresh
+          </button>
         </div>
-        <button onClick={fetchAll} style={{ padding: '10px 18px', border: '1px solid #D1D5DB', borderRadius: 8, background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
-          🔄 Refresh
-        </button>
+
+        <div style={{ display: 'flex', gap: 8, padding: '10px 0 18px' }}>
+          {['Requests', 'Users', 'Reports'].map(function(tab) {
+            return (
+              <button key={tab} onClick={function() { setActiveTab(tab); }}
+                style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                  background: activeTab === tab ? '#1e40af' : '#F3F4F6',
+                  color: activeTab === tab ? '#fff' : '#374151',
+                }}>
+                {tab}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 32px' }}>
-
-        {/* Stat Cards */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
-          <StatCard label="Total Requests"    value={total}      color="#1D4ED8" bg="#EFF6FF" />
-          <StatCard label="New (Submitted)"   value={submitted}  color="#6B7280" bg="#F3F4F6" />
-          <StatCard label="In Progress"       value={inProgress} color="#F59E0B" bg="#FEF3C7" />
-          <StatCard label="Completed"         value={completed}  color="#10B981" bg="#D1FAE5" />
-          <StatCard label="Total Reports"     value={reports.length} color="#8B5CF6" bg="#EDE9FE" />
-        </div>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 32px' }}>
 
         {loading ? (
           <div style={{ padding: 48, textAlign: 'center', color: '#6B7280' }}>Loading data...</div>
         ) : (
           <>
             {/* User Management Section */}
+            {activeTab === 'Users' && (
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden', marginBottom: 28 }}>
               <div style={{ padding: '20px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div>
                   <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1f2937', margin: 0 }}>User Management</h2>
-                  <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>Add, edit, reset passwords, and delete system users without tabs.</div>
                 </div>
                 <button onClick={openAddUser} style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid #D1D5DB', background: '#fff', color: '#374151', fontWeight: 600, cursor: 'pointer' }}>
                   + Add New User
@@ -411,8 +421,10 @@ export default function MDDashboard() {
                 </table>
               </div>
             </div>
+            )}
 
             {/* Requests Section */}
+            {activeTab === 'Requests' && (
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden', marginBottom: 28 }}>
               <div style={{ padding: '16px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1f2937', margin: 0 }}>
@@ -431,6 +443,15 @@ export default function MDDashboard() {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Request stat cards (shown only in Requests tab) */}
+              <div style={{ display: 'flex', gap: 16, margin: '16px 24px', flexWrap: 'wrap' }}>
+                <StatCard label="Total Requests" value={total} color="#1D4ED8" bg="#EFF6FF" />
+                <StatCard label="New (Submitted)" value={submitted} color="#6B7280" bg="#F3F4F6" />
+                <StatCard label="In Progress" value={inProgress} color="#F59E0B" bg="#FEF3C7" />
+                <StatCard label="Completed" value={completed} color="#10B981" bg="#D1FAE5" />
+                <StatCard label="Total Reports" value={reports.length} color="#8B5CF6" bg="#EDE9FE" />
               </div>
 
               {filteredRequests.length === 0 ? (
@@ -475,8 +496,10 @@ export default function MDDashboard() {
                 </div>
               )}
             </div>
+            )}
 
             {/* Reports Section */}
+            {activeTab === 'Reports' && (
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden' }}>
               <div style={{ padding: '16px 24px', borderBottom: '1px solid #E5E7EB' }}>
                 <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1f2937', margin: 0 }}>
@@ -506,12 +529,20 @@ export default function MDDashboard() {
                         <div style={{ marginTop: 8, fontSize: 13, color: '#6B7280', lineHeight: 1.5 }}>
                           {rep.findings && rep.findings.length > 150 ? rep.findings.slice(0, 150) + '...' : rep.findings}
                         </div>
+                        <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <button onClick={function() { setViewReport(rep); }} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', color: '#1f2937', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>View Report</button>
+                          {rep.status !== 'Actioned' && (
+                            <button onClick={async function() { try { await axios.put(API_URL + '/inspector-reports/' + rep.id, { status: 'Reviewed' }); await fetchAll(); } catch(err){ console.error(err); alert('Unable to mark reviewed'); } }} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#f3f4f6', color: '#374151', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Mark Reviewed</button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               )}
             </div>
+            )}
+            {viewReport && <MDReportViewer report={viewReport} onClose={function() { setViewReport(null); }} />}
           </>
         )}
       </div>
